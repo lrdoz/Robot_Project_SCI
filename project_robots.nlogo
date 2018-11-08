@@ -9,17 +9,18 @@ to setup
   __clear-all-and-reset-ticks
   ask patches with [ (abs pxcor = max-pxcor) or (abs pycor = max-pycor) ]
     [ set pcolor brown ]
+
   ;; Génère des points aléatoire
-  ;;ask n-of 50 patches with [ not any? neighbors with [pcolor = brown]]
-    ;;[ set pcolor brown ]
+  ask n-of 50 patches with [ not any? neighbors with [pcolor = brown]]
+    [ set pcolor brown ]
   ;; Cherche les points aléatoire et les grossis
-  ;;repeat 50
-   ;; [ ask one-of patches with [ (pcolor = brown) and (count neighbors4 with [pcolor = brown] < 2) ]
-     ;;   [ask one-of neighbors4 with [ no-wall? ] [ set pcolor brown ]]
-    ;;]
+  repeat 50
+    [ ask one-of patches with [ (pcolor = brown) and (count neighbors4 with [pcolor = brown] < 2) ]
+        [ask one-of neighbors4 with [ no-wall? ] [ set pcolor brown ]]
+  ]
   create-robots nb-robots [ init-robot ]
 
-  ;;propagate
+  propagate
 end
 
 to init-robot
@@ -32,7 +33,7 @@ end
 
 to go
   move-robot robots
-  ;;propagate
+  propagate
   tick
 end
 
@@ -50,6 +51,7 @@ end
 
 to change-heading-and-move
   let v voisins with [no-wall? and (not any? turtles-here)]
+
   if (any? v)
     [ set heading towards one-of v
       move-to patch-ahead 1 ]
@@ -59,32 +61,22 @@ end
 to propagate
   ask patches with [ no-wall? ]
     [ set pcolor black set dist -1 set repulsion 0 ]
-  let p (patch-set [patch-here] of robots) ; let p patches with [any? robots-here]
+
+  ;;let p (patch-set [patch-here] of robots) ;; let p patches with [any? robots-here]
+  let p patches with [wall?]
   let d 0
+
   while [ any? p ]
     [ ask p [ set dist d ]
       set d d + 1
       set p (patch-set [ voisins with [no-wall? and ((dist = -1) or (dist > d))]] of p)
     ]
-  set max-dist max [ dist ] of patches
-  if (max-dist < 0) [ set max-dist 0 ]
-  set p (patch-set [patch-here] of repulsors)
-  let r repulsion-strength
-  while [ (any? p) and (r > 0) ]
-    [ ask p [ set repulsion r ]
-      set r r - 1
-      set p (patch-set [ voisins with [no-wall? and (repulsion < r)]] of p)
-    ]
-  ifelse (show-labels?)
+
+  if (show-labels?)
     [ ask patches with [no-wall?]
         [ set plabel-color white
           set plabel dist + repulsion
           set pcolor black ]
-    ]
-    [ ask patches with [no-wall?]
-        [ set plabel ""
-          set plabel-color black
-          color-patch ]
     ]
 end
 
@@ -130,6 +122,10 @@ end
 
 to-report no-wall?
   report pcolor != brown
+end
+
+to-report wall?
+  report pcolor = brown
 end
 
 to-report black-sq?
@@ -204,7 +200,7 @@ SWITCH
 356
 neighbors4?
 neighbors4?
-0
+1
 1
 -1000
 
@@ -230,7 +226,7 @@ SWITCH
 309
 show-labels?
 show-labels?
-0
+1
 1
 -1000
 
