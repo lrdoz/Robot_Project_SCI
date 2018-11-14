@@ -1,5 +1,6 @@
-breed [robots robot]
-
+breed [followers follower]
+breed [robots attractor]
+breed [repulsors repulsor]
 
 globals [ max-dist ]
 patches-own [ dist repulsion ]
@@ -10,14 +11,12 @@ to setup
     [ set pcolor brown ]
 
   ;; Génère des points aléatoire
-  if add-wall?[
-    ask n-of 50 patches with [ not any? neighbors with [pcolor = brown]]
+  ask n-of 50 patches with [ not any? neighbors with [pcolor = brown]]
     [ set pcolor brown ]
-    ;; Cherche les points aléatoire et les grossis
-    repeat 50
+  ;; Cherche les points aléatoire et les grossis
+  repeat 50
     [ ask one-of patches with [ (pcolor = brown) and (count neighbors4 with [pcolor = brown] < 2) ]
-      [ask one-of neighbors4 with [ no-wall? ] [ set pcolor brown ]]
-    ]
+        [ask one-of neighbors4 with [ no-wall? ] [ set pcolor brown ]]
   ]
   create-robots nb-robots [ init-robot ]
 
@@ -34,7 +33,6 @@ end
 
 to go
   move-robot robots
-
   propagate
   tick
 end
@@ -58,7 +56,7 @@ end
 
 to propagate
   ask patches with [ no-wall? ]
-    [set dist -1] ;; ici pour stocker le tableau des cases de chaque agent
+    [set dist -1]
 
   ;;let p (patch-set [patch-here] of robots) ;; let p patches with [any? robots-here]
   let p patches with [black-sq?] ;; p = toutes les cases qui sont noirs
@@ -81,27 +79,37 @@ end
 
 to move-robot [ me ]
   ask me
+  ;; Suppression des murs
     [
     let v (voisins with [no-wall?])
+
     move-to min-one-of v [dist]
     ask patch-here [set pcolor red]
-    let x xcor
-    let y ycor
-    ask patches in-cone perception 360 with [no-wall?] [set pcolor red]
     ]
 
 end
 
 
+to color-patch
+  set pcolor wrap-color
+      (ifelse-value (dist < 0) [ black ] [scale-color green (sqrt dist) (sqrt max-dist) 0])
+    + (scale-color red repulsion 0 repulsion-strength)
+end
+
 to-report no-wall?
   report pcolor != brown
 end
+
+to-report wall?
+  report pcolor = brown
+end
+
 @#$#@#$#@
 GRAPHICS-WINDOW
-860
-24
-1528
-693
+210
+10
+878
+679
 -1
 -1
 20.0
@@ -171,14 +179,14 @@ neighbors4?
 
 SLIDER
 9
-228
+373
 181
-261
-perception
-perception
+406
+repulsion-strength
+repulsion-strength
 0
 50
-4.0
+10.0
 1
 1
 NIL
@@ -204,22 +212,11 @@ nb-robots
 nb-robots
 0
 100
-3.0
+1.0
 1
 1
 NIL
 HORIZONTAL
-
-SWITCH
-372
-238
-495
-271
-add-wall?
-add-wall?
-0
-1
--1000
 
 @#$#@#$#@
 ## WHAT IS IT?
