@@ -1,8 +1,10 @@
 breed [robots robot]
-
+;;breed [wastes waste]
+breed [buckets bucket]
 
 globals [ max-dist ]
-patches-own [ dist repulsion ]
+patches-own [dist waste]
+;;patches-own [waste]
 
 to setup
   __clear-all-and-reset-ticks
@@ -19,7 +21,19 @@ to setup
       [ask one-of neighbors4 with [ no-wall? ] [ set pcolor brown ]]
     ]
   ]
+
+  ask patches with [no-wall?][
+    if (random 5 < 4)
+    [set waste (random 10) set pcolor black]
+  ]
+
+  ;; Place les robots
   create-robots nb-robots [ init-robot ]
+
+  ;;Places les déchets
+  ;;create-wastes nb-dechets [ init-waste]
+
+  create-buckets nb-buckets [ init-bucket]
 
   propagate
 end
@@ -29,6 +43,19 @@ to init-robot
   set color green
   move-to one-of patches with [no-wall?]
   change-heading-and-move
+end
+
+
+to init-waste
+  set shape "box"
+  set color black
+  move-to one-of patches with [no-wall?]
+end
+
+to init-bucket
+  set shape "triangle"
+  set color black
+  move-to one-of patches with [no-wall?]
 end
 
 
@@ -84,10 +111,10 @@ to move-robot [ me ]
     [
     let v (voisins with [no-wall?])
     move-to min-one-of v [dist]
-    ask patch-here [set pcolor red]
+    ask patch-here [set pcolor white]
     let x xcor
     let y ycor
-    ask patches in-cone perception 360 with [no-wall?] [set pcolor red]
+    ask patches in-cone perception 360 with [no-wall?] [set pcolor white]
     ]
 
 end
@@ -95,6 +122,10 @@ end
 
 to-report no-wall?
   report pcolor != brown
+end
+
+to-report wastes?
+  report waste > 0
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -178,7 +209,7 @@ perception
 perception
 0
 50
-4.0
+1.0
 1
 1
 NIL
@@ -191,7 +222,7 @@ SWITCH
 309
 show-labels?
 show-labels?
-0
+1
 1
 -1000
 
@@ -220,6 +251,36 @@ add-wall?
 0
 1
 -1000
+
+SLIDER
+354
+188
+526
+221
+nb-dechets
+nb-dechets
+0
+100
+17.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+252
+294
+424
+327
+nb-buckets
+nb-buckets
+0
+100
+6.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
