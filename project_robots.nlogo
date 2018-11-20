@@ -1,37 +1,45 @@
 breed [robots robot]
-;;breed [wastes waste]
+breed [wastes waste]
 breed [buckets bucket]
+extensions [array]
 
 globals [ max-dist ]
-patches-own [dist waste]
-;;patches-own [waste]
+patches-own [dist wall robots-know]
+robots-own [pocket index]
+
+
 
 to setup
   __clear-all-and-reset-ticks
   ask patches with [ (abs pxcor = max-pxcor) or (abs pycor = max-pycor) ]
-    [ set pcolor brown ]
+    [ set pcolor black set wall 1 ]
 
   ;; Génère des points aléatoire
   if add-wall?[
-    ask n-of 50 patches with [ not any? neighbors with [pcolor = brown]]
-    [ set pcolor brown ]
+    ask n-of 50 patches with [ not any? neighbors with [wall = 1]]
+    [ set pcolor black set wall 1 ]
+
     ;; Cherche les points aléatoire et les grossis
     repeat 50
-    [ ask one-of patches with [ (pcolor = brown) and (count neighbors4 with [pcolor = brown] < 2) ]
-      [ask one-of neighbors4 with [ no-wall? ] [ set pcolor brown ]]
+    [ ask one-of patches with [ (wall = 1) and (count neighbors4 with [wall = 1] < 2) ]
+      [ask one-of neighbors4 with [ no-wall? ] [ set pcolor black set wall 1 ]]
     ]
   ]
-
+  ;; On stock les listes de vision dans les patches
   ask patches with [no-wall?][
-    if (random 5 < 4)
-    [set waste (random 10) set pcolor black]
+    set robots-know ifelse-value coop? [array:from-list n-values nb-robots [0]][0]
   ]
+
+;;  ask patches with [no-wall?][
+;;    if (random 10 < 1)
+;;    [set waste (random 5) set pcolor yellow]
+;;  ]
 
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
 
   ;;Places les déchets
-  ;;create-wastes nb-dechets [ init-waste]
+  create-wastes nb-dechets [ init-waste]
 
   create-buckets nb-buckets [ init-bucket]
 
@@ -41,6 +49,7 @@ end
 to init-robot
   set shape "circle"
   set color green
+  set index ifelse-value coop? [who][0]
   move-to one-of patches with [no-wall?]
   change-heading-and-move
 end
@@ -48,20 +57,22 @@ end
 
 to init-waste
   set shape "box"
-  set color black
+  set color red
+  set hidden? true
   move-to one-of patches with [no-wall?]
 end
 
 to init-bucket
-  set shape "triangle"
-  set color black
+  set shape "garbage can"
+  set color green
+  set size 1.5
+  set hidden? true
   move-to one-of patches with [no-wall?]
 end
 
 
 to go
   move-robot robots
-
   propagate
   tick
 end
@@ -99,7 +110,7 @@ to propagate
 
   if (show-labels?)
     [ ask patches with [no-wall?]
-        [ set plabel-color white
+        [ set plabel-color red
           set plabel dist
       ]
           ;;set pcolor black ]
@@ -108,25 +119,30 @@ end
 
 to move-robot [ me ]
   ask me
-    [
+  [
     let v (voisins with [no-wall?])
     move-to min-one-of v [dist]
-    ask patch-here [set pcolor white]
-    let x xcor
-    let y ycor
-    ask patches in-cone perception 360 with [no-wall?] [set pcolor white]
-    ]
+    ask patches in-cone perception 360 with [no-wall?] [set pcolor white array:set robots-know index 1]
+    ask patches in-cone perception 360 with [wall?] [set pcolor brown]
+    ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
+    ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
+
+  ]
 
 end
 
 
 to-report no-wall?
-  report pcolor != brown
+  report wall != 1
 end
 
-to-report wastes?
-  report waste > 0
+to-report wall?
+  report wall = 1
 end
+
+;;to-report wastes?
+;;  report waste > 0
+;;end
 @#$#@#$#@
 GRAPHICS-WINDOW
 860
@@ -209,7 +225,7 @@ perception
 perception
 0
 50
-1.0
+0.0
 1
 1
 NIL
@@ -235,7 +251,7 @@ nb-robots
 nb-robots
 0
 100
-3.0
+0.0
 1
 1
 NIL
@@ -261,7 +277,7 @@ nb-dechets
 nb-dechets
 0
 100
-17.0
+0.0
 1
 1
 NIL
@@ -276,11 +292,22 @@ nb-buckets
 nb-buckets
 0
 100
-6.0
+0.0
 1
 1
 NIL
 HORIZONTAL
+
+SWITCH
+18
+375
+154
+408
+coop?
+coop?
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -460,6 +487,23 @@ Circle -7500403 true true 96 51 108
 Circle -16777216 true false 113 68 74
 Polygon -10899396 true false 189 233 219 188 249 173 279 188 234 218
 Polygon -10899396 true false 180 255 150 210 105 210 75 240 135 240
+
+garbage can
+false
+0
+Polygon -16777216 false false 60 240 66 257 90 285 134 299 164 299 209 284 234 259 240 240
+Rectangle -7500403 true true 60 75 240 240
+Polygon -7500403 true true 60 238 66 256 90 283 135 298 165 298 210 283 235 256 240 238
+Polygon -7500403 true true 60 75 66 57 90 30 135 15 165 15 210 30 235 57 240 75
+Polygon -7500403 true true 60 75 66 93 90 120 135 135 165 135 210 120 235 93 240 75
+Polygon -16777216 false false 59 75 66 57 89 30 134 15 164 15 209 30 234 56 239 75 235 91 209 120 164 135 134 135 89 120 64 90
+Line -16777216 false 210 120 210 285
+Line -16777216 false 90 120 90 285
+Line -16777216 false 125 131 125 296
+Line -16777216 false 65 93 65 258
+Line -16777216 false 175 131 175 296
+Line -16777216 false 235 93 235 258
+Polygon -16777216 false false 112 52 112 66 127 51 162 64 170 87 185 85 192 71 180 54 155 39 127 36
 
 house
 false
