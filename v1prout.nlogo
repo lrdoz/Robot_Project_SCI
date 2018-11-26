@@ -5,10 +5,9 @@ extensions [array]
 
 globals [ max-dist ]
 patches-own [dist wall robots-know]
-robots-own [pocket]
+robots-own [pocket index]
 
 
-;; récupérer les turtles dans un rayon : turtles in-radius 3
 
 to setup
   __clear-all-and-reset-ticks
@@ -28,13 +27,8 @@ to setup
   ]
   ;; On stock les listes de vision dans les patches
   ask patches with [no-wall?][
-    set robots-know ifelse-value coop? [0][array:from-list n-values nb-robots [0]]
+    set robots-know ifelse-value coop? [array:from-list n-values nb-robots [0]][0]
   ]
-
-  ask patches with [wall?][
-    set robots-know ifelse-value coop? [1][array:from-list n-values nb-robots [1]]
-  ]
-
 
 ;;  ask patches with [no-wall?][
 ;;    if (random 10 < 1)
@@ -55,7 +49,7 @@ end
 to init-robot
   set shape "circle"
   set color green
-
+  set index ifelse-value coop? [who][0]
   move-to one-of patches with [no-wall?]
   change-heading-and-move
 end
@@ -78,7 +72,7 @@ end
 
 
 to go
-  ask robots [move-robot]
+  move-robot robots
   propagate
   tick
 end
@@ -102,22 +96,17 @@ end
 
 to propagate
   ask patches with [ no-wall? ]
-    ;;[set dist -1] ;; ici pour stocker le tableau des cases de chaque agent
-  [set dist ifelse-value coop? [-1][array:from-list n-values nb-robots [-1]]]
+    [set dist -1] ;; ici pour stocker le tableau des cases de chaque agent
 
   ;;let p (patch-set [patch-here] of robots) ;; let p patches with [any? robots-here]
-  let p patches with [hide-patch?] ;; p = toutes les cases à visiter
+  let p patches with [black-sq?] ;; p = toutes les cases qui sont noirs
   let d 0
 
-  if-else coop?
-    [
-      while [ any? p ][
-        ask p [ set dist d ]
-        set d d + 1
-        set p (patch-set [ voisins with [no-wall? and ((dist = -1) or (dist > d))]] of p)
-      ]
+  while [ any? p ]
+    [ ask p [ set dist d ]
+      set d d + 1
+      set p (patch-set [ voisins with [no-wall? and ((dist = -1) or (dist > d))]] of p)
     ]
-  [ask robots [propagate-robot]]
 
   if (show-labels?)
     [ ask patches with [no-wall?]
@@ -128,35 +117,20 @@ to propagate
     ]
 end
 
-to propagate-robot
-  let p patches with [hide-patch?]
-  let d 0
-  let ind who
-  while [ any? p ][
-    ask p [(array:set dist ind d)]
-        set d d + 1
-    set p (patch-set [ voisins with [no-wall? and (((array:item dist ind) = -1) or ((array:item dist ind) > d))]] of p)
-   ]
-end
-
-to move-robot
-  let ind who
-  let v (voisins with [no-wall?])
-    move-to min-one-of v [ifelse-value coop? [dist] [(array:item dist ind)]]
-    ask patches in-cone perception 360 with [no-wall?] [set robots-know 1 set pcolor white]
+to move-robot [ me ]
+  ask me
+  [
+    let v (voisins with [no-wall?])
+    move-to min-one-of v [dist]
+    ask patches in-cone perception 360 with [no-wall?] [set pcolor white array:set robots-know index 1]
     ask patches in-cone perception 360 with [wall?] [set pcolor brown]
     ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
     ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
 
-
+  ]
 
 end
 
-to-report hide-patch?
-  report ifelse-value coop?
-  [robots-know != 1]
-  [robots-know != array:from-list n-values nb-robots [1]]
-end
 
 to-report no-wall?
   report wall != 1
@@ -165,19 +139,15 @@ end
 to-report wall?
   report wall = 1
 end
-
-;;to-report wastes?
-;;  report waste > 0
-;;end
 @#$#@#$#@
 GRAPHICS-WINDOW
-582
-28
-1250
-697
+210
+10
+647
+448
 -1
 -1
-20.0
+13.0
 1
 10
 1
@@ -191,186 +161,48 @@ GRAPHICS-WINDOW
 16
 -16
 16
-1
-1
+0
+0
 1
 ticks
 30.0
 
-BUTTON
-22
-26
-88
-59
-NIL
-setup
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-25
-77
-88
-110
-NIL
-go
-T
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-SWITCH
-15
-323
-149
-356
-neighbors4?
-neighbors4?
-0
-1
--1000
-
-SLIDER
-9
-228
-181
-261
-perception
-perception
-0
-50
-2.0
-1
-1
-NIL
-HORIZONTAL
-
-SWITCH
-18
-276
-156
-309
-show-labels?
-show-labels?
-0
-1
--1000
-
-SLIDER
-7
-182
-179
-215
-nb-robots
-nb-robots
-0
-100
-3.0
-1
-1
-NIL
-HORIZONTAL
-
-SWITCH
-212
-230
-335
-263
-add-wall?
-add-wall?
-0
-1
--1000
-
-SLIDER
-213
-179
-385
-212
-nb-dechets
-nb-dechets
-0
-100
-4.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-207
-284
-379
-317
-nb-buckets
-nb-buckets
-0
-100
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SWITCH
-18
-375
-154
-408
-coop?
-coop?
-1
-1
--1000
-
 @#$#@#$#@
 ## WHAT IS IT?
 
-This section could give a general understanding of what the model is trying to show or explain.
+(a general understanding of what the model is trying to show or explain)
 
 ## HOW IT WORKS
 
-This section could explain what rules the agents use to create the overall behavior of the model.
+(what rules the agents use to create the overall behavior of the model)
 
 ## HOW TO USE IT
 
-This section could explain how to use the model, including a description of each of the items in the interface tab.
+(how to use the model, including a description of each of the items in the Interface tab)
 
 ## THINGS TO NOTICE
 
-This section could give some ideas of things for the user to notice while running the model.
+(suggested things for the user to notice while running the model)
 
 ## THINGS TO TRY
 
-This section could give some ideas of things for the user to try to do (move sliders, switches, etc.) with the model.
+(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
 
 ## EXTENDING THE MODEL
 
-This section could give some ideas of things to add or change in the procedures tab to make the model more complicated, detailed, accurate, etc.
+(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
 
 ## NETLOGO FEATURES
 
-This section could point out any especially interesting or unusual features of NetLogo that the model makes use of, particularly in the Procedures tab.  It might also point out places where workarounds were needed because of missing features.
+(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
 
 ## RELATED MODELS
 
-This section could give the names of models in the NetLogo Models Library or elsewhere which are of related interest.
+(models in the NetLogo Models Library and elsewhere which are of related interest)
 
 ## CREDITS AND REFERENCES
 
-This section could contain a reference to the model's URL on the web if it has one, as well as any other necessary credits or references.
+(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
 @#$#@#$#@
 default
 true
@@ -514,23 +346,6 @@ Circle -16777216 true false 113 68 74
 Polygon -10899396 true false 189 233 219 188 249 173 279 188 234 218
 Polygon -10899396 true false 180 255 150 210 105 210 75 240 135 240
 
-garbage can
-false
-0
-Polygon -16777216 false false 60 240 66 257 90 285 134 299 164 299 209 284 234 259 240 240
-Rectangle -7500403 true true 60 75 240 240
-Polygon -7500403 true true 60 238 66 256 90 283 135 298 165 298 210 283 235 256 240 238
-Polygon -7500403 true true 60 75 66 57 90 30 135 15 165 15 210 30 235 57 240 75
-Polygon -7500403 true true 60 75 66 93 90 120 135 135 165 135 210 120 235 93 240 75
-Polygon -16777216 false false 59 75 66 57 89 30 134 15 164 15 209 30 234 56 239 75 235 91 209 120 164 135 134 135 89 120 64 90
-Line -16777216 false 210 120 210 285
-Line -16777216 false 90 120 90 285
-Line -16777216 false 125 131 125 296
-Line -16777216 false 65 93 65 258
-Line -16777216 false 175 131 175 296
-Line -16777216 false 235 93 235 258
-Polygon -16777216 false false 112 52 112 66 127 51 162 64 170 87 185 85 192 71 180 54 155 39 127 36
-
 house
 false
 0
@@ -583,12 +398,19 @@ Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
 
 sheep
 false
-0
-Rectangle -7500403 true true 151 225 180 285
-Rectangle -7500403 true true 47 225 75 285
-Rectangle -7500403 true true 15 75 210 225
-Circle -7500403 true true 135 75 150
-Circle -16777216 true false 165 76 116
+15
+Circle -1 true true 203 65 88
+Circle -1 true true 70 65 162
+Circle -1 true true 150 105 120
+Polygon -7500403 true false 218 120 240 165 255 165 278 120
+Circle -7500403 true false 214 72 67
+Rectangle -1 true true 164 223 179 298
+Polygon -1 true true 45 285 30 285 30 240 15 195 45 210
+Circle -1 true true 3 83 150
+Rectangle -1 true true 65 221 80 296
+Polygon -1 true true 195 285 210 285 210 240 240 210 195 210
+Polygon -7500403 true false 276 85 285 105 302 99 294 83
+Polygon -7500403 true false 219 85 210 105 193 99 201 83
 
 square
 false
@@ -673,6 +495,13 @@ Line -7500403 true 216 40 79 269
 Line -7500403 true 40 84 269 221
 Line -7500403 true 40 216 269 79
 Line -7500403 true 84 40 221 269
+
+wolf
+false
+0
+Polygon -16777216 true false 253 133 245 131 245 133
+Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
+Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
 
 x
 false
