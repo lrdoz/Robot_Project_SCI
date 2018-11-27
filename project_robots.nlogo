@@ -106,11 +106,12 @@ to propagate
   [set dist ifelse-value coop? [-1][array:from-list n-values nb-robots [-1]]]
 
   ;;let p (patch-set [patch-here] of robots) ;; let p patches with [any? robots-here]
-  let p patches with [hide-patch?] ;; p = toutes les cases à visiter
-  let d 0
+
 
   if-else coop?
     [
+      let p patches with [hide-patch? 0] ;; p = toutes les cases à visiter
+      let d 0
       while [ any? p ][
         ask p [ set dist d ]
         set d d + 1
@@ -122,16 +123,17 @@ to propagate
   if (show-labels?)
     [ ask patches with [no-wall?]
         [ set plabel-color red
-          set plabel dist
+          set plabel array:item dist (nb-robots - 1)
+        ;;set plabel array:item robots-know (nb-robots - 1)
       ]
           ;;set pcolor black ]
     ]
 end
 
 to propagate-robot
-  let p patches with [hide-patch?]
   let d 0
   let ind who
+  let p patches with [hide-patch? ind]
   while [ any? p ][
     ask p [(array:set dist ind d)]
         set d d + 1
@@ -143,7 +145,7 @@ to move-robot
   let ind who
   let v (voisins with [no-wall?])
     move-to min-one-of v [ifelse-value coop? [dist] [(array:item dist ind)]]
-    ask patches in-cone perception 360 with [no-wall?] [set robots-know 1 set pcolor white]
+  ask patches in-cone perception 360 with [no-wall?] [ifelse coop? [set robots-know 1] [(array:set robots-know ind 1)] set pcolor white]
     ask patches in-cone perception 360 with [wall?] [set pcolor brown]
     ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
     ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
@@ -152,10 +154,10 @@ to move-robot
 
 end
 
-to-report hide-patch?
+to-report hide-patch? [ind]
   report ifelse-value coop?
   [robots-know != 1]
-  [robots-know != array:from-list n-values nb-robots [1]]
+  [array:item robots-know ind != 1]
 end
 
 to-report no-wall?
@@ -277,7 +279,7 @@ nb-robots
 nb-robots
 0
 100
-3.0
+2.0
 1
 1
 NIL
