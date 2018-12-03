@@ -74,9 +74,18 @@ end
 
 
 to go
-  ask robots [choose-move]
-  propagate
-  tick
+  ifelse any? robots [
+    ask robots [choose-move]
+    propagate
+    tick
+  ]
+  [
+    ask patches [set pcolor black]
+    ask buckets [die]
+    ask patch 0 0  [set plabel-color white set plabel "Bonne nuit" ]
+
+    tick
+  ]
 end
 
 to-report voisins
@@ -106,7 +115,7 @@ to propagate
    set dist-nuts array:from-list n-values nb-robots [-1]
    set dist-trees array:from-list n-values nb-robots [-1]]
 
-  if-else coop?
+  if-else coop? and any? robots
     [ask one-of robots [choose-propagate]]
     [ask robots [choose-propagate]]
 
@@ -176,10 +185,25 @@ end
 to pick-up
   let ind index
   let v (voisins with [no-wall?])
-  ifelse pocket = 0
-  [move-to min-one-of v [(array:item dist-nuts ind)]]
-  [move-to min-one-of v [(array:item dist-trees ind)]]
-  consume
+  let current-val (array:item dist-nuts ind)
+
+  ;; Si plus de noisette
+  ifelse current-val = -1
+  [move-to min-one-of v [(array:item dist-trees ind)]
+    sleep-robot
+  ]
+  [
+    ifelse (pocket = 0)
+     [move-to min-one-of v [(array:item dist-nuts ind)]
+    consume]
+     [move-to min-one-of v [(array:item dist-trees ind)]
+      consume]
+  ]
+end
+
+to sleep-robot
+  if any? buckets-here
+  [die]
 end
 
 to consume
@@ -228,13 +252,13 @@ end
 ;;end
 @#$#@#$#@
 GRAPHICS-WINDOW
-582
-28
-1250
-697
+655
+10
+1168
+524
 -1
 -1
-20.0
+15.303030303030303
 1
 10
 1
@@ -323,7 +347,7 @@ nb-robots
 nb-robots
 0
 100
-6.0
+8.0
 1
 1
 NIL
@@ -349,7 +373,7 @@ nb-dechets
 nb-dechets
 0
 100
-47.0
+50.0
 1
 1
 NIL
@@ -377,7 +401,7 @@ SWITCH
 408
 coop?
 coop?
-1
+0
 1
 -1000
 
@@ -403,7 +427,7 @@ NIL
 10.0
 0.0
 10.0
-true
+false
 false
 "" ""
 PENS
