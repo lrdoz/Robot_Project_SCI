@@ -4,8 +4,8 @@ breed [buckets bucket]
 extensions [array]
 
 globals [ max-dist table-size]
-patches-own [dist wall robots-know]
-robots-own [pocket index]
+patches-own [dist dist-nuts dist-trees wall robots-know]
+robots-own [pocket index state]
 
 
 ;; récupérer les turtles dans un rayon : turtles in-radius 3
@@ -54,7 +54,6 @@ to init-robot
   set color 36
   set index ifelse-value coop? [0] [who]
   move-to one-of patches with [no-wall?]
-  change-heading-and-move
 end
 
 
@@ -75,7 +74,7 @@ end
 
 
 to go
-  ask robots [move-robot]
+  ask robots [choose-move]
   propagate
   tick
 end
@@ -88,38 +87,47 @@ to-report black-sq?
   report pcolor = black
 end
 
-to change-heading-and-move
-  let v voisins with [no-wall? and (not any? turtles-here)]
-
-  if (any? v)
-    [ set heading towards one-of v
-      move-to patch-ahead 1 ]
-end
-
-
 to propagate
   ask patches with [ no-wall? ]
   ;; ici pour stocker le tableau des cases de chaque agent
-  [set dist array:from-list n-values table-size [-1]]
+  [set dist array:from-list n-values table-size [-1] set dist-nuts array:from-list n-values nb-robots [-1]]
 
 
   if-else coop?
-    [ask one-of robots [propagate-robot]]
-    [ask robots [propagate-robot]]
+    [ask one-of robots [choose-propagate]]
+    [ask robots [choose-propagate]]
 
   if (show-labels?)
     [ ask patches with [no-wall?]
         [ set plabel-color red
-          set plabel array:item dist (nb-robots - 1)
+          set plabel array:item dist-nuts (0)
         ;;set plabel array:item robots-know (nb-robots - 1)
       ]
     ]
 end
 
-to propagate-robot
+to choose-propagate
+  let ind 0
+  let p patches
+  if-else unfinished?
+  [
+    set ind index
+    set p patches with [hide-patch? ind]
+    propagate-robot p ind
+  ]
+  [
+    set ind who
+    set p ifelse-value (pocket = 0)
+    [wastes-on patches]
+    [buckets-on patches]
+    propagate-robot-nuts p ind
+  ]
+
+end
+
+;; PROPAGATE
+to propagate-robot [p ind]
   let d 0
-  let ind index
-  let p patches with [hide-patch? ind]
   while [ any? p ][
     ask p [(array:set dist ind d)]
     set d d + 1
@@ -127,10 +135,25 @@ to propagate-robot
    ]
 end
 
-to move-robot
+to propagate-robot-nuts [p ind]
+  let d 0
+  while [ any? p ][
+    ask p [(array:set dist-nuts ind d)]
+    set d d + 1
+    set p (patch-set [ voisins with [no-wall? and (((array:item dist-nuts ind) = -1) or ((array:item dist-nuts ind) > d))]] of p)
+   ]
+end
+
+to choose-move
   let ind index
   let v (voisins with [no-wall?])
-    move-to min-one-of v [(array:item dist ind)]
+  move-to min-one-of v [(array:item dist ind)]
+
+  if-else unfinished? [uncover] []
+end
+
+to uncover
+  let ind index
   ask patches in-cone perception 360 with [no-wall?]
     [(array:set robots-know ind 1)
      set pcolor ifelse-value coop?
@@ -140,13 +163,35 @@ to move-robot
     ask patches in-cone perception 360 with [wall?] [set pcolor 65]
     ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
     ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
+end
 
+to consume
+  if pocket = 0 and any? wastes-here
+  [ set pocket 1
+    ask wastes-here [die] ]
+  if pocket = 1 and any? buckets-here
+  [ set pocket 0]
+end
 
+;; méthode des patchs
+;; permet de set la valeur correspondant à l'état de la case
+;; 0 : rien
+;; 1 : boîte
+;; 2 : bucket
+;; 3 : boîte que je vais chercher
+;; 4 : boîte que quelqu'un va chercher
+;;to discover [ind]
 
+;;end
+
+to-report unfinished?
+  let ind index
+  let p (patches with [hide-patch? ind])
+  report (any? p)
 end
 
 to-report hide-patch? [ind]
-  report array:item robots-know ind != 1
+  report array:item robots-know ind = 0
 end
 
 to-report no-wall?
@@ -255,7 +300,7 @@ SWITCH
 309
 show-labels?
 show-labels?
-1
+0
 1
 -1000
 

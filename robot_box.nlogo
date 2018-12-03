@@ -3,9 +3,9 @@ breed [wastes waste]
 breed [buckets bucket]
 extensions [array]
 
-globals [ max-dist ]
+globals [ max-dist table-size]
 patches-own [dist wall robots-know]
-robots-own [pocket]
+robots-own [pocket index]
 
 
 ;; récupérer les turtles dans un rayon : turtles in-radius 3
@@ -14,6 +14,8 @@ to setup
   __clear-all-and-reset-ticks
   ask patches with [ (abs pxcor = max-pxcor) or (abs pycor = max-pycor) ]
     [ set pcolor black set wall 1 ]
+
+  set table-size nb-robots
 
   ;; Génère des points aléatoire
   if add-wall?[
@@ -27,19 +29,13 @@ to setup
     ]
   ]
   ;; On stock les listes de vision dans les patches
-  ask patches with [no-wall?][
-    set robots-know ifelse-value coop? [0][array:from-list n-values nb-robots [0]]
-  ]
-
-  ask patches with [wall?][
-    set robots-know ifelse-value coop? [1][array:from-list n-values nb-robots [1]]
-  ]
-
-
 ;;  ask patches with [no-wall?][
-;;    if (random 10 < 1)
-;;    [set waste (random 5) set pcolor yellow]
-;;  ]
+ ;;   set robots-know ifelse-value coop? [0][array:from-list n-values nb-robots [0]]
+ ;; ]
+
+ ;; ask patches with [wall?][
+ ;;   set robots-know ifelse-value coop? [1][array:from-list n-values nb-robots [1]]
+ ;; ]
 
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
@@ -55,9 +51,8 @@ end
 to init-robot
   set shape "squirrel"
   set color 36
-
+  set index who
   move-to one-of patches with [no-wall?]
-
 end
 
 
@@ -89,7 +84,7 @@ end
 
 to propagate
   ask patches with [ no-wall? ]
-  [set dist -1]
+  [set dist array:from-list n-values table-size [-1]]
 
   ask robots [propagate-robot]
 
@@ -106,15 +101,28 @@ to propagate
 end
 
 to propagate-robot
+  print index
   let d 0
+  let ind index
   let p patches
   ifelse pocket = 0
   [set p wastes-on patches]
   [set p buckets-on patches]
   while [ any? p ][
-    ask p [set dist d]
+    ask p [(array:set dist ind d)]
     set d d + 1
-    set p (patch-set [ voisins with [no-wall? and ((dist = -1) or (dist > d))]] of p)
+    set p (patch-set [ voisins with [no-wall? and (((array:item dist ind) = -1) or ((array:item dist ind) > d))]] of p)
+   ]
+end
+
+to propagate-robot2
+  let d 0
+  let ind index
+  let p patches with [hide-patch? ind]
+  while [ any? p ][
+    ask p [(array:set dist ind d)]
+    set d d + 1
+    set p (patch-set [ voisins with [no-wall? and (((array:item dist ind) = -1) or ((array:item dist ind) > d))]] of p)
    ]
 end
 
@@ -127,9 +135,25 @@ to consume
 end
 
 to move-robot
+  let ind index
   let v (voisins with [no-wall?])
-  move-to min-one-of v [dist]
+  move-to min-one-of v [(array:item dist ind)]
   consume
+end
+
+to move-robot2
+  let ind index
+  let v (voisins with [no-wall?])
+    move-to min-one-of v [(array:item dist ind)]
+  ask patches in-cone perception 360 with [no-wall?]
+    [(array:set robots-know ind 1)
+     set pcolor ifelse-value coop?
+      [white]
+      [scale-color white (sum(array:to-list robots-know)) 0 nb-robots]]
+
+    ask patches in-cone perception 360 with [wall?] [set pcolor 65]
+    ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
+    ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
 end
 
 
@@ -140,6 +164,11 @@ end
 to-report wall?
   report wall = 1
 end
+
+to-report hide-patch? [ind]
+  report array:item robots-know ind != 1
+end
+
 
 ;;to-report wastes?
 ;;  report waste > 0
@@ -252,7 +281,7 @@ nb-robots
 nb-robots
 0
 100
-2.0
+4.0
 1
 1
 NIL
@@ -278,7 +307,7 @@ nb-dechets
 nb-dechets
 0
 100
-10.0
+22.0
 1
 1
 NIL
@@ -293,7 +322,7 @@ nb-buckets
 nb-buckets
 0
 100
-2.0
+6.0
 1
 1
 NIL
