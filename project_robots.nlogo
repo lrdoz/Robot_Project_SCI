@@ -87,42 +87,42 @@ to-report black-sq?
   report pcolor = black
 end
 
+to show-label
+  ask patches with [no-wall?]
+    [ set plabel-color red
+      if (show-dist = "dist")
+      [set plabel array:item dist (0)]
+      if (show-dist = "nuts")
+      [set plabel array:item dist-nuts (0)]
+      if (show-dist = "trees")
+      [set plabel array:item dist-trees (0)]
+     ]
+end
+
 to propagate
   ask patches with [ no-wall? ]
   ;; ici pour stocker le tableau des cases de chaque agent
-  [set dist array:from-list n-values table-size [-1] set dist-nuts array:from-list n-values nb-robots [-1]]
-
+  [set dist array:from-list n-values table-size [-1]
+   set dist-nuts array:from-list n-values nb-robots [-1]
+   set dist-trees array:from-list n-values nb-robots [-1]]
 
   if-else coop?
     [ask one-of robots [choose-propagate]]
     [ask robots [choose-propagate]]
 
-  if (show-labels?)
-    [ ask patches with [no-wall?]
-        [ set plabel-color red
-          set plabel array:item dist-nuts (0)
-        ;;set plabel array:item robots-know (nb-robots - 1)
-      ]
-    ]
+  show-label
 end
 
 to choose-propagate
-  let ind 0
-  let p patches
-  if-else unfinished?
-  [
-    set ind index
-    set p patches with [hide-patch? ind]
-    propagate-robot p ind
-  ]
-  [
-    set ind who
-    set p ifelse-value (pocket = 0)
-    [wastes-on patches]
-    [buckets-on patches]
-    propagate-robot-nuts p ind
-  ]
+  let ind index
+  let p patches with [hide-patch? ind]
+  propagate-robot p ind
 
+  set p wastes-on patches with [discover-patch? ind]
+  propagate-robot-nuts p ind
+
+  set p buckets-on patches with [discover-patch? ind]
+  propagate-robot-tree p ind
 end
 
 ;; PROPAGATE
@@ -144,16 +144,24 @@ to propagate-robot-nuts [p ind]
    ]
 end
 
-to choose-move
-  let ind index
-  let v (voisins with [no-wall?])
-  move-to min-one-of v [(array:item dist ind)]
+to propagate-robot-tree [p ind]
+  let d 0
+  while [ any? p ][
+    ask p [(array:set dist-trees ind d)]
+    set d d + 1
+    set p (patch-set [ voisins with [no-wall? and (((array:item dist-trees ind) = -1) or ((array:item dist-trees ind) > d))]] of p)
+   ]
+end
 
-  if-else unfinished? [uncover] []
+to choose-move
+  if-else unfinished? [uncover] [print ("coucou") pick-up]
 end
 
 to uncover
   let ind index
+  let v (voisins with [no-wall?])
+  move-to min-one-of v [(array:item dist ind)]
+
   ask patches in-cone perception 360 with [no-wall?]
     [(array:set robots-know ind 1)
      set pcolor ifelse-value coop?
@@ -163,6 +171,15 @@ to uncover
     ask patches in-cone perception 360 with [wall?] [set pcolor 65]
     ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
     ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
+end
+
+to pick-up
+  let ind index
+  let v (voisins with [no-wall?])
+  ifelse pocket = 0
+  [move-to min-one-of v [(array:item dist-nuts ind)]]
+  [move-to min-one-of v [(array:item dist-trees ind)]]
+  consume
 end
 
 to consume
@@ -192,6 +209,10 @@ end
 
 to-report hide-patch? [ind]
   report array:item robots-know ind = 0
+end
+
+to-report discover-patch? [ind]
+  report array:item robots-know ind = 1
 end
 
 to-report no-wall?
@@ -293,17 +314,6 @@ perception
 NIL
 HORIZONTAL
 
-SWITCH
-18
-276
-156
-309
-show-labels?
-show-labels?
-0
-1
--1000
-
 SLIDER
 7
 182
@@ -313,7 +323,7 @@ nb-robots
 nb-robots
 0
 100
-4.0
+6.0
 1
 1
 NIL
@@ -339,7 +349,7 @@ nb-dechets
 nb-dechets
 0
 100
-4.0
+51.0
 1
 1
 NIL
@@ -354,7 +364,7 @@ nb-buckets
 nb-buckets
 0
 100
-4.0
+1.0
 1
 1
 NIL
@@ -370,6 +380,16 @@ coop?
 0
 1
 -1000
+
+CHOOSER
+202
+367
+340
+412
+show-dist
+show-dist
+"dist" "nuts" "trees" "null"
+0
 
 @#$#@#$#@
 ## WHAT IS IT?
