@@ -3,20 +3,16 @@ breed [wastes waste]
 breed [buckets bucket]
 extensions [array]
 
-globals [ max-dist table-size]
+globals [ max-dist ]
 patches-own [dist wall robots-know]
 robots-own [pocket index]
 
 
-;; récupérer les turtles dans un rayon : turtles in-radius 3
 
 to setup
   __clear-all-and-reset-ticks
   ask patches with [ (abs pxcor = max-pxcor) or (abs pycor = max-pycor) ]
     [ set pcolor black set wall 1 ]
-
-
-  set table-size ifelse-value coop? [1] [nb-robots]
 
   ;; Génère des points aléatoire
   if add-wall?[
@@ -31,12 +27,13 @@ to setup
   ]
   ;; On stock les listes de vision dans les patches
   ask patches with [no-wall?][
-    set robots-know array:from-list n-values table-size [0]
+    set robots-know ifelse-value coop? [array:from-list n-values nb-robots [0]][0]
   ]
 
-  ask patches with [wall?][
-    set robots-know array:from-list n-values table-size [1]
-  ]
+;;  ask patches with [no-wall?][
+;;    if (random 10 < 1)
+;;    [set waste (random 5) set pcolor yellow]
+;;  ]
 
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
@@ -50,32 +47,32 @@ to setup
 end
 
 to init-robot
-  set shape "squirrel"
-  set color 36
-  set index ifelse-value coop? [0] [who]
+  set shape "circle"
+  set color green
+  set index ifelse-value coop? [who][0]
   move-to one-of patches with [no-wall?]
   change-heading-and-move
 end
 
 
 to init-waste
-  set shape "acorn"
-  set color 22
+  set shape "box"
+  set color red
   set hidden? true
   move-to one-of patches with [no-wall?]
 end
 
 to init-bucket
-  set shape "tree pine"
-  set color 61
-  set size 2
+  set shape "garbage can"
+  set color green
+  set size 1.5
   set hidden? true
   move-to one-of patches with [no-wall?]
 end
 
 
 to go
-  ask robots [move-robot]
+  move-robot robots
   propagate
   tick
 end
@@ -99,55 +96,41 @@ end
 
 to propagate
   ask patches with [ no-wall? ]
-  ;; ici pour stocker le tableau des cases de chaque agent
-  [set dist array:from-list n-values table-size [-1]]
+    [set dist -1] ;; ici pour stocker le tableau des cases de chaque agent
 
+  ;;let p (patch-set [patch-here] of robots) ;; let p patches with [any? robots-here]
+  let p patches with [black-sq?] ;; p = toutes les cases qui sont noirs
+  let d 0
 
-  if-else coop?
-    [ask one-of robots [propagate-robot]]
-    [ask robots [propagate-robot]]
+  while [ any? p ]
+    [ ask p [ set dist d ]
+      set d d + 1
+      set p (patch-set [ voisins with [no-wall? and ((dist = -1) or (dist > d))]] of p)
+    ]
 
   if (show-labels?)
     [ ask patches with [no-wall?]
         [ set plabel-color red
-          set plabel array:item dist (nb-robots - 1)
-        ;;set plabel array:item robots-know (nb-robots - 1)
+          set plabel dist
       ]
+          ;;set pcolor black ]
     ]
 end
 
-to propagate-robot
-  let d 0
-  let ind index
-  let p patches with [hide-patch? ind]
-  while [ any? p ][
-    ask p [(array:set dist ind d)]
-    set d d + 1
-    set p (patch-set [ voisins with [no-wall? and (((array:item dist ind) = -1) or ((array:item dist ind) > d))]] of p)
-   ]
-end
-
-to move-robot
-  let ind index
-  let v (voisins with [no-wall?])
-    move-to min-one-of v [(array:item dist ind)]
-  ask patches in-cone perception 360 with [no-wall?]
-    [(array:set robots-know ind 1)
-     set pcolor ifelse-value coop?
-      [white]
-      [scale-color white (sum(array:to-list robots-know)) 0 nb-robots]]
-  ;;
-    ask patches in-cone perception 360 with [wall?] [set pcolor 65]
+to move-robot [ me ]
+  ask me
+  [
+    let v (voisins with [no-wall?])
+    move-to min-one-of v [dist]
+    ask patches in-cone perception 360 with [no-wall?] [set pcolor white]
+    ask patches in-cone perception 360 with [wall?] [set pcolor brown]
     ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
     ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
 
-
+  ]
 
 end
 
-to-report hide-patch? [ind]
-  report array:item robots-know ind != 1
-end
 
 to-report no-wall?
   report wall != 1
@@ -156,10 +139,6 @@ end
 to-report wall?
   report wall = 1
 end
-
-;;to-report wastes?
-;;  report waste > 0
-;;end
 @#$#@#$#@
 GRAPHICS-WINDOW
 582
@@ -242,7 +221,7 @@ perception
 perception
 0
 50
-2.0
+3.0
 1
 1
 NIL
@@ -255,7 +234,7 @@ SWITCH
 309
 show-labels?
 show-labels?
-1
+0
 1
 -1000
 
@@ -268,7 +247,7 @@ nb-robots
 nb-robots
 0
 100
-4.0
+6.0
 1
 1
 NIL
@@ -309,7 +288,7 @@ nb-buckets
 nb-buckets
 0
 100
-4.0
+0.0
 1
 1
 NIL
@@ -322,7 +301,7 @@ SWITCH
 408
 coop?
 coop?
-0
+1
 1
 -1000
 
@@ -367,30 +346,6 @@ default
 true
 0
 Polygon -7500403 true true 150 5 40 250 150 205 260 250
-
-acorn
-false
-0
-Polygon -7500403 true true 146 297 120 285 105 270 75 225 60 180 60 150 75 105 225 105 240 150 240 180 225 225 195 270 180 285 155 297
-Polygon -6459832 true false 121 15 136 58 94 53 68 65 46 90 46 105 75 115 234 117 256 105 256 90 239 68 209 57 157 59 136 8
-Circle -16777216 false false 223 95 18
-Circle -16777216 false false 219 77 18
-Circle -16777216 false false 205 88 18
-Line -16777216 false 214 68 223 71
-Line -16777216 false 223 72 225 78
-Line -16777216 false 212 88 207 82
-Line -16777216 false 206 82 195 82
-Line -16777216 false 197 114 201 107
-Line -16777216 false 201 106 193 97
-Line -16777216 false 198 66 189 60
-Line -16777216 false 176 87 180 80
-Line -16777216 false 157 105 161 98
-Line -16777216 false 158 65 150 56
-Line -16777216 false 180 79 172 70
-Line -16777216 false 193 73 197 66
-Line -16777216 false 237 82 252 84
-Line -16777216 false 249 86 253 97
-Line -16777216 false 240 104 252 96
 
 airplane
 true
@@ -616,22 +571,6 @@ false
 Rectangle -7500403 true true 30 30 270 270
 Rectangle -16777216 true false 60 60 240 240
 
-squirrel
-false
-0
-Polygon -7500403 true true 87 267 106 290 145 292 157 288 175 292 209 292 207 281 190 276 174 277 156 271 154 261 157 245 151 230 156 221 171 209 214 165 231 171 239 171 263 154 281 137 294 136 297 126 295 119 279 117 241 145 242 128 262 132 282 124 288 108 269 88 247 73 226 72 213 76 208 88 190 112 151 107 119 117 84 139 61 175 57 210 65 231 79 253 65 243 46 187 49 157 82 109 115 93 146 83 202 49 231 13 181 12 142 6 95 30 50 39 12 96 0 162 23 250 68 275
-Polygon -16777216 true false 237 85 249 84 255 92 246 95
-Line -16777216 false 221 82 213 93
-Line -16777216 false 253 119 266 124
-Line -16777216 false 278 110 278 116
-Line -16777216 false 149 229 135 211
-Line -16777216 false 134 211 115 207
-Line -16777216 false 117 207 106 211
-Line -16777216 false 91 268 131 290
-Line -16777216 false 220 82 213 79
-Line -16777216 false 286 126 294 128
-Line -16777216 false 193 284 206 285
-
 star
 false
 0
@@ -655,14 +594,6 @@ Circle -7500403 true true 65 21 108
 Circle -7500403 true true 116 41 127
 Circle -7500403 true true 45 90 120
 Circle -7500403 true true 104 74 152
-
-tree pine
-false
-0
-Rectangle -6459832 true false 120 225 180 300
-Polygon -7500403 true true 150 240 240 270 150 135 60 270
-Polygon -7500403 true true 150 75 75 210 150 195 225 210
-Polygon -7500403 true true 150 7 90 157 150 142 210 157 150 7
 
 triangle
 false
