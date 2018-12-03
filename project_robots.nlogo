@@ -59,7 +59,7 @@ end
 
 to init-waste
   set shape "acorn"
-  set color 22
+  set color 23
   set hidden? true
   move-to one-of patches with [no-wall?]
 end
@@ -154,7 +154,7 @@ to propagate-robot-tree [p ind]
 end
 
 to choose-move
-  if-else unfinished? [uncover] [print ("coucou") pick-up]
+  if-else unfinished? [uncover] [pick-up]
 end
 
 to uncover
@@ -168,7 +168,7 @@ to uncover
       [white]
       [scale-color white (sum(array:to-list robots-know)) 0 nb-robots]]
   ;;
-    ask patches in-cone perception 360 with [wall?] [set pcolor 65]
+    ask patches in-cone perception 360 with [wall?] [set pcolor 32]
     ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
     ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
 end
@@ -308,7 +308,7 @@ perception
 perception
 0
 50
-2.0
+3.0
 1
 1
 NIL
@@ -349,7 +349,7 @@ nb-dechets
 nb-dechets
 0
 100
-51.0
+47.0
 1
 1
 NIL
@@ -364,7 +364,7 @@ nb-buckets
 nb-buckets
 0
 100
-1.0
+3.0
 1
 1
 NIL
@@ -377,7 +377,7 @@ SWITCH
 408
 coop?
 coop?
-0
+1
 1
 -1000
 
@@ -389,7 +389,25 @@ CHOOSER
 show-dist
 show-dist
 "dist" "nuts" "trees" "null"
-0
+3
+
+PLOT
+1325
+48
+1525
+198
+plot 1
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot count patches with [discover-patch? 0]"
 
 @#$#@#$#@
 ## WHAT IS IT?
