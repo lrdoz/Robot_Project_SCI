@@ -23,7 +23,7 @@ to setup
     ;; Cherche les points aléatoire et les grossis
     repeat 50
     [ ask one-of patches with [ (wall = 1) and (count neighbors4 with [wall = 1] < 2) ]
-      [ask one-of neighbors4 with [ no-wall? ] [ set pcolor white set wall 1 ]]
+      [ask one-of neighbors4 with [ no-wall? ] [ set pcolor brown set wall 1 ]]
     ]
   ]
   ;; On stock les listes de vision dans les patches
@@ -49,7 +49,7 @@ to setup
 
   create-buckets nb-buckets [ init-bucket]
 
-  ;;propagate
+  propagate
 end
 
 to init-robot
@@ -252,7 +252,7 @@ nb-robots
 nb-robots
 0
 100
-1.0
+2.0
 1
 1
 NIL
@@ -293,7 +293,7 @@ nb-buckets
 nb-buckets
 0
 100
-3.0
+2.0
 1
 1
 NIL
