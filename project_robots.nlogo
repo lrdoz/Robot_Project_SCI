@@ -102,6 +102,7 @@ to propagate
   ;; ici pour stocker le tableau des cases de chaque agent
   [set dist array:from-list n-values table-size [-1]]
 
+
   if-else coop?
     [ask one-of robots [propagate-robot]]
     [ask robots [propagate-robot]]
@@ -145,9 +146,7 @@ to move-robot
 end
 
 to-report hide-patch? [ind]
-  report ifelse-value coop?
-  [robots-know != 1]
-  [array:item robots-know ind != 1]
+  report array:item robots-know ind != 1
 end
 
 to-report no-wall?
@@ -269,7 +268,7 @@ nb-robots
 nb-robots
 0
 100
-1.0
+4.0
 1
 1
 NIL
