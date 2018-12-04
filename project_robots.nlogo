@@ -5,7 +5,7 @@ extensions [array]
 
 globals [ max-dist table-size sleep-var]
 patches-own [dist dist-nuts dist-trees wall robots-know]
-robots-own [pocket index state]
+robots-own [pocket index goal]
 
 
 ;; récupérer les turtles dans un rayon : turtles in-radius 3
@@ -46,13 +46,16 @@ to setup
 
   create-buckets nb-buckets [ init-bucket]
 
+  ask robots [move-to one-of buckets]
   propagate
 end
 
 to init-robot
   set shape "squirrel"
   set color 36
+  set hidden? true
   set index ifelse-value coop? [0] [who]
+  set goal nobody
   move-to one-of patches with [no-wall?]
 end
 
@@ -107,19 +110,19 @@ to show-label
       [set plabel array:item dist-trees (0)]
       if (show-dist = "label")
       [set plabel array:item robots-know (0)]
-     ]
+  ]
 end
 
 to propagate
   ask patches with [ no-wall? ]
   ;; ici pour stocker le tableau des cases de chaque agent
   [set dist array:from-list n-values table-size [-1]
-   set dist-nuts array:from-list n-values nb-robots [-1]
-   set dist-trees array:from-list n-values nb-robots [-1]]
+    set dist-nuts array:from-list n-values nb-robots [-1]
+    set dist-trees array:from-list n-values nb-robots [-1]]
 
   if-else coop? and any? robots
-    [ask one-of robots [choose-propagate]]
     [ask robots [choose-propagate]]
+  [ask robots [choose-propagate]]
 
   show-label
 end
@@ -129,11 +132,15 @@ to choose-propagate
   let p patches with [hide-patch? ind]
   propagate-robot p ind
 
-  set p patches with [nuts-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
-  propagate-robot-nuts p ind
-
   set p patches with [buckets-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
   propagate-robot-tree p ind
+
+  ifelse coop?
+  [set p goal]
+  [set p patches with [nuts-patch? ind]] ;; c'est ici qu'on doit changer pour le coop/solitaire
+
+  set ind who
+  if (p != nobody) [propagate-robot-nuts p ind]
 end
 
 ;; PROPAGATE
@@ -143,7 +150,7 @@ to propagate-robot [p ind]
     ask p [(array:set dist ind d)]
     set d d + 1
     set p (patch-set [ voisins with [no-wall? and (((array:item dist ind) = -1) or ((array:item dist ind) > d))]] of p)
-   ]
+  ]
 end
 
 to propagate-robot-nuts [p ind]
@@ -152,7 +159,7 @@ to propagate-robot-nuts [p ind]
     ask p [(array:set dist-nuts ind d)]
     set d d + 1
     set p (patch-set [ voisins with [no-wall? and (((array:item dist-nuts ind) = -1) or ((array:item dist-nuts ind) > d))]] of p)
-   ]
+  ]
 end
 
 to propagate-robot-tree [p ind]
@@ -161,10 +168,11 @@ to propagate-robot-tree [p ind]
     ask p [(array:set dist-trees ind d)]
     set d d + 1
     set p (patch-set [ voisins with [no-wall? and (((array:item dist-trees ind) = -1) or ((array:item dist-trees ind) > d))]] of p)
-   ]
+  ]
 end
 
 to choose-move
+  set hidden? false
   if-else unfinished? [uncover] [pick-up]
 end
 
@@ -175,34 +183,50 @@ to uncover
 
   ask patches in-cone perception 360 with [no-wall? and hide-patch? ind]
     [(array:set robots-know ind 1)
-     set pcolor ifelse-value coop?
+      set pcolor ifelse-value coop?
       [white]
       [scale-color white (sum(array:to-list robots-know)) 0 nb-robots]]
   ;;
-    ask patches in-cone perception 360 with [wall?] [set pcolor 32]
-    ask buckets in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 3)]
-    ask wastes in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 2)]
+  ask patches in-cone perception 360 with [wall?] [set pcolor 32]
+  ask buckets in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 3)]
+  ask wastes in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 2)]
 end
 
 to pick-up
   let ind index
   let v (voisins with [no-wall?])
-  let current-val (array:item dist-nuts ind)
+
+  let p patches with [nuts-patch? ind]
 
   ;; Si plus de noisette
-  ifelse current-val = -1
+  ifelse not any? p and not any? wastes
   [move-to min-one-of v [(array:item dist-trees ind)]
     sleep-robot
   ]
   [
     ifelse (pocket = 0)
-     [move-to min-one-of v [(array:item dist-nuts ind)]]
-     [move-to min-one-of v [(array:item dist-trees ind)]]
+    [set ind who move-to min-one-of v [(array:item dist-nuts ind)] set ind index]
+    [move-to min-one-of v [(array:item dist-trees ind)]]
     consume
+    ifelse coop? [
+      set p patches with [nuts-patch? ind]
+      if (goal = nobody and any? p)
+      ;; Il faut définir un objectif
+      [
+        ;;
+        set goal n-of 1 (p)
+        ;; On reset la case actuel
+        ask goal [array:set robots-know ind 1]
+      ]
+    ]
+    [
+      ask patches in-cone perception 360 with [nuts-patch? ind]
+      [(array:set robots-know ind 1)]
+      ask wastes in-cone perception 360 with [no-wall?] [(array:set robots-know ind 2)]
+    ]
+
   ]
-  ask patches in-cone perception 360 with [nuts-patch? ind]
-  [(array:set robots-know ind 1)]
-  ask wastes in-cone perception 360 with [no-wall?] [(array:set robots-know ind 2)]
+
 end
 
 to sleep-robot
@@ -212,13 +236,19 @@ end
 
 to consume
   let ind index
-  if pocket = 0 and any? wastes-here
+  let tmp nobody
+  if goal != nobody[
+  set tmp one-of goal
+  ]
+  if pocket = 0 and (tmp = patch-here)
   [ set pocket 1
     ask wastes-here [die]
     ask patch-here [(array:set robots-know ind 1)]
   ]
   if pocket = 1 and any? buckets-here
-  [ set pocket 0]
+  [ set pocket 0
+    set goal nobody
+  ]
 end
 
 ;; méthode des patchs
@@ -389,7 +419,7 @@ nb-dechets
 nb-dechets
 0
 100
-35.0
+36.0
 1
 1
 NIL
@@ -404,7 +434,7 @@ nb-buckets
 nb-buckets
 0
 100
-3.0
+1.0
 1
 1
 NIL
@@ -417,7 +447,7 @@ SWITCH
 408
 coop?
 coop?
-1
+0
 1
 -1000
 
@@ -429,7 +459,7 @@ CHOOSER
 show-dist
 show-dist
 "dist" "nuts" "trees" "label" "null"
-1
+4
 
 PLOT
 1325
