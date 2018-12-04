@@ -3,7 +3,7 @@ breed [wastes waste]
 breed [buckets bucket]
 extensions [array]
 
-globals [ max-dist table-size]
+globals [ max-dist table-size sleep-var]
 patches-own [dist dist-nuts dist-trees wall robots-know]
 robots-own [pocket index state]
 
@@ -38,13 +38,17 @@ to setup
     set robots-know array:from-list n-values table-size [1]
   ]
 
+
+
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
+
+  create-buckets nb-buckets [init-bucket]
 
   ;;Places les déchets
   create-wastes nb-dechets [ init-waste]
 
-  create-buckets nb-buckets [ init-bucket]
+
 
   propagate
 end
@@ -69,7 +73,7 @@ to init-bucket
   set color 61
   set size 2
   set hidden? true
-  move-to one-of patches with [no-wall?]
+  ;move-to one-of patches with [no-wall?]
 end
 
 
@@ -77,13 +81,14 @@ to go
   ifelse any? robots [
     ask robots [choose-move]
     propagate
+    set sleep-var 0
     tick
   ]
   [
-    ask patches [set pcolor black]
+    ask patches with [pxcor = (- sleep-var) or pxcor = sleep-var][set pcolor black]
     ask buckets [die]
-    ask patch 0 0  [set plabel-color white set plabel "Bonne nuit" ]
-
+    ask patch 0 0  [set plabel-color white set plabel "Good Night !" ]
+    set sleep-var sleep-var + 1
     tick
   ]
 end
