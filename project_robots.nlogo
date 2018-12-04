@@ -38,17 +38,13 @@ to setup
     set robots-know array:from-list n-values table-size [1]
   ]
 
-
-
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
-
-  create-buckets nb-buckets [init-bucket]
 
   ;;Places les déchets
   create-wastes nb-dechets [ init-waste]
 
-
+  create-buckets nb-buckets [ init-bucket]
 
   propagate
 end
@@ -73,7 +69,7 @@ to init-bucket
   set color 61
   set size 2
   set hidden? true
-  ;move-to one-of patches with [no-wall?]
+  move-to one-of patches with [no-wall?]
 end
 
 
@@ -81,7 +77,6 @@ to go
   ifelse any? robots [
     ask robots [choose-move]
     propagate
-    set sleep-var 0
     tick
   ]
   [
@@ -110,6 +105,8 @@ to show-label
       [set plabel array:item dist-nuts (0)]
       if (show-dist = "trees")
       [set plabel array:item dist-trees (0)]
+      if (show-dist = "label")
+      [set plabel array:item robots-know (0)]
      ]
 end
 
@@ -132,10 +129,10 @@ to choose-propagate
   let p patches with [hide-patch? ind]
   propagate-robot p ind
 
-  set p wastes-on patches with [discover-patch? ind]
+  set p patches with [nuts-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
   propagate-robot-nuts p ind
 
-  set p buckets-on patches with [discover-patch? ind]
+  set p patches with [buckets-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
   propagate-robot-tree p ind
 end
 
@@ -176,15 +173,15 @@ to uncover
   let v (voisins with [no-wall?])
   move-to min-one-of v [(array:item dist ind)]
 
-  ask patches in-cone perception 360 with [no-wall?]
+  ask patches in-cone perception 360 with [no-wall? and hide-patch? ind]
     [(array:set robots-know ind 1)
      set pcolor ifelse-value coop?
       [white]
       [scale-color white (sum(array:to-list robots-know)) 0 nb-robots]]
   ;;
     ask patches in-cone perception 360 with [wall?] [set pcolor 32]
-    ask buckets in-cone perception 360 with [no-wall?] [set hidden? false]
-    ask wastes in-cone perception 360 with [no-wall?] [set hidden? false]
+    ask buckets in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 3)]
+    ask wastes in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 2)]
 end
 
 to pick-up
@@ -199,11 +196,13 @@ to pick-up
   ]
   [
     ifelse (pocket = 0)
-     [move-to min-one-of v [(array:item dist-nuts ind)]
-    consume]
-     [move-to min-one-of v [(array:item dist-trees ind)]
-      consume]
+     [move-to min-one-of v [(array:item dist-nuts ind)]]
+     [move-to min-one-of v [(array:item dist-trees ind)]]
+    consume
   ]
+  ask patches in-cone perception 360 with [nuts-patch? ind]
+  [(array:set robots-know ind 1)]
+  ask wastes in-cone perception 360 with [no-wall?] [(array:set robots-know ind 2)]
 end
 
 to sleep-robot
@@ -212,20 +211,24 @@ to sleep-robot
 end
 
 to consume
+  let ind index
   if pocket = 0 and any? wastes-here
   [ set pocket 1
-    ask wastes-here [die] ]
+    ask wastes-here [die]
+    ask patch-here [(array:set robots-know ind 1)]
+  ]
   if pocket = 1 and any? buckets-here
   [ set pocket 0]
 end
 
 ;; méthode des patchs
 ;; permet de set la valeur correspondant à l'état de la case
-;; 0 : rien
-;; 1 : boîte
-;; 2 : bucket
-;; 3 : boîte que je vais chercher
-;; 4 : boîte que quelqu'un va chercher
+;; 0 : je sais pas
+;; 1 : rien
+;; 2 : boîte
+;; 3 : bucket
+;; 4 : boîte que je vais chercher
+;; 5 : boîte que quelqu'un va chercher
 ;;to discover [ind]
 
 ;;end
@@ -241,7 +244,15 @@ to-report hide-patch? [ind]
 end
 
 to-report discover-patch? [ind]
-  report array:item robots-know ind = 1
+  report array:item robots-know ind != 0
+end
+
+to-report nuts-patch? [ind]
+  report array:item robots-know ind = 2
+end
+
+to-report buckets-patch? [ind]
+  report array:item robots-know ind = 3
 end
 
 to-report no-wall?
@@ -378,7 +389,7 @@ nb-dechets
 nb-dechets
 0
 100
-50.0
+35.0
 1
 1
 NIL
@@ -406,7 +417,7 @@ SWITCH
 408
 coop?
 coop?
-0
+1
 1
 -1000
 
@@ -417,8 +428,8 @@ CHOOSER
 412
 show-dist
 show-dist
-"dist" "nuts" "trees" "null"
-3
+"dist" "nuts" "trees" "label" "null"
+1
 
 PLOT
 1325
