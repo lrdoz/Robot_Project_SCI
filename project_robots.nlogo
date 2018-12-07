@@ -4,7 +4,7 @@ breed [buckets bucket]
 extensions [array]
 
 globals [ max-dist table-size sleep-var]
-patches-own [dist dist-nuts dist-trees wall robots-know]
+patches-own [dist repulsion dist-nuts dist-trees wall robots-know]
 robots-own [pocket index goal]
 
 
@@ -16,15 +16,15 @@ to setup
     [ set pcolor black set wall 1 ]
 
 
-  set table-size ifelse-value (comportement = "coop-av-coord") [1] [nb-robots]
+  set table-size ifelse-value ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) [1] [nb-robots]
 
   ;; Génère des points aléatoire
   if add-wall?[
-    ask n-of 50 patches with [ not any? neighbors with [wall = 1]]
+    ask n-of 100 patches with [ not any? neighbors with [wall = 1]]
     [ set pcolor black set wall 1 ]
 
     ;; Cherche les points aléatoire et les grossis
-    repeat 50
+    repeat 100
     [ ask one-of patches with [ (wall = 1) and (count neighbors4 with [wall = 1] < 2) ]
       [ask one-of neighbors4 with [ no-wall? ] [ set pcolor black set wall 1 ]]
     ]
@@ -54,7 +54,7 @@ to init-robot
   set shape "squirrel"
   set color 36
   set hidden? true
-  set index ifelse-value (comportement = "coop-av-coord") [0] [who]
+  set index ifelse-value ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) [0] [who]
   set goal nobody
   move-to one-of patches with [no-wall?]
 end
@@ -110,19 +110,23 @@ to show-label
       [set plabel array:item dist-trees (0)]
       if (show-dist = "label")
       [set plabel array:item robots-know (0)]
+      if (show-dist = "repulsion")
+      [set plabel array:item repulsion (0)]
       if (show-dist = "null")
       [set plabel ""]
   ]
 end
 
 to propagate
-  ask patches with [ no-wall? ]
+  ask patches
   ;; ici pour stocker le tableau des cases de chaque agent
   [set dist array:from-list n-values table-size [-1]
     set dist-nuts array:from-list n-values nb-robots [-1]
-    set dist-trees array:from-list n-values nb-robots [-1]]
+    set dist-trees array:from-list n-values nb-robots [-1]
+    set repulsion array:from-list n-values nb-robots [0]
+  ]
 
-  if-else (comportement = "coop-av-coord") and any? robots
+  if-else ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) and any? robots
     [ask robots [choose-propagate]]
   [ask robots [choose-propagate]]
 
@@ -137,12 +141,29 @@ to choose-propagate
   set p patches with [buckets-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
   propagate-robot-tree p ind
 
-  ifelse (comportement = "coop-av-coord")
-  [set p goal]
+  ifelse ("coop-av-coord" = comportement or "coop-ss-coord" = comportement)
+  [
+    ;; Répulsion si on est en phase d'exploration, sinon rien
+    if unfinished?
+       [
+          let friends (robots with [myself != self])
+          repulse-propagate friends who
+       ]
+    set p goal
+  ]
   [set p patches with [nuts-patch? ind]] ;; c'est ici qu'on doit changer pour le coop/solitaire
 
   set ind who
   if (p != nobody) [propagate-robot-nuts p ind]
+end
+
+to repulse-propagate [p ind]
+  let r repulsion-effect
+  while [ (any? p) and (r > 0) ]
+    [ ask p [(array:set repulsion ind r)]
+      set r r - 1
+      set p (patch-set [ voisins with [no-wall? and (array:item repulsion ind < r)]] of p)
+    ]
 end
 
 ;; PROPAGATE
@@ -180,18 +201,20 @@ end
 
 to uncover
   let ind index
+  let my-index who
   let v (voisins with [no-wall?])
-  move-to min-one-of v [(array:item dist ind)]
+
+  move-to min-one-of v [(array:item dist ind) + (array:item repulsion  my-index)]
 
   ask patches in-cone perception 360 with [no-wall? and hide-patch? ind]
     [(array:set robots-know ind 1)
-      set pcolor ifelse-value (comportement = "coop-av-coord")
+      set pcolor ifelse-value ("coop-av-coord" = comportement or "coop-ss-coord" = comportement)
       [white]
       [scale-color white (sum(array:to-list robots-know)) 0 nb-robots]]
   ;;
   ask patches in-cone perception 360 with [wall?] [set pcolor 32]
   ask buckets in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 3)]
-  ask wastes in-cone perception 360 with [no-wall?] [set hidden? false (array:set robots-know ind 2)]
+  ask wastes in-cone perception 360 with [no-wall? and not dist-neg? ind] [set hidden? false (array:set robots-know ind 2)]
 end
 
 to pick-up
@@ -201,7 +224,7 @@ to pick-up
   let p patches with [nuts-patch? ind]
 
   ;; Si plus de noisette
-  ifelse not any? p and not any? wastes
+  ifelse not any? p and goal = nobody
   [move-to min-one-of v [(array:item dist-trees ind)]
     sleep-robot
   ]
@@ -210,7 +233,7 @@ to pick-up
     [set ind who move-to min-one-of v [(array:item dist-nuts ind)] set ind index]
     [move-to min-one-of v [(array:item dist-trees ind)]]
     consume
-    ifelse (comportement = "coop-av-coord") [
+    ifelse ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) [
       set p patches with [nuts-patch? ind]
       if (goal = nobody and any? p)
       ;; Il faut définir un objectif
@@ -218,7 +241,7 @@ to pick-up
         ;;
         set goal n-of 1 (p)
         ;; On reset la case actuel
-        ask goal [array:set robots-know ind 1]
+          ask goal [array:set robots-know ind 1]
       ]
     ]
     [
@@ -239,21 +262,20 @@ end
 to consume
   let ind index
   let tmp nobody
+
+  ;; Si il n'a pas d'objectif
   if goal != nobody[
-  set tmp one-of goal
+    set tmp one-of goal
   ]
-  if-else not (comportement = "coop-av-coord")[
-    if pocket = 0 and (tmp = patch-here)
+
+  let condition ifelse-value not ("coop-av-coord" = comportement or "coop-ss-coord" = comportement)[
+    any? wastes-here
+  ][(tmp = patch-here)]
+
+  if pocket = 0 and condition
   [ set pocket 1
     ask wastes-here [die]
     ask patch-here [(array:set robots-know ind 1)]
-  ]
-  ]
-  [if pocket = 0 and (tmp = patch-here)
-    [ set pocket 1
-      ask wastes-here [die]
-      ask patch-here [(array:set robots-know ind 1)]
-    ]
   ]
   if pocket = 1 and any? buckets-here
   [ set pocket 0
@@ -261,26 +283,18 @@ to consume
   ]
 end
 
-;; méthode des patchs
-;; permet de set la valeur correspondant à l'état de la case
-;; 0 : je sais pas
-;; 1 : rien
-;; 2 : boîte
-;; 3 : bucket
-;; 4 : boîte que je vais chercher
-;; 5 : boîte que quelqu'un va chercher
-;;to discover [ind]
-
-;;end
-
 to-report unfinished?
   let ind index
-  let p (patches with [hide-patch? ind])
+  let p (patches with [not ((array:item dist ind) = -1)])
   report (any? p)
 end
 
 to-report hide-patch? [ind]
   report array:item robots-know ind = 0
+end
+
+to-report dist-neg?[ind]
+ report (array:item dist ind = -1)
 end
 
 to-report discover-patch? [ind]
@@ -310,11 +324,11 @@ end
 GRAPHICS-WINDOW
 485
 22
-998
-536
+1033
+571
 -1
 -1
-15.303030303030303
+16.364
 1
 10
 1
@@ -429,7 +443,7 @@ nb-dechets
 nb-dechets
 0
 100
-36.0
+21.0
 1
 1
 NIL
@@ -451,14 +465,14 @@ NIL
 HORIZONTAL
 
 CHOOSER
-202
-367
-340
-412
+209
+336
+347
+381
 show-dist
 show-dist
-"dist" "nuts" "trees" "label" "null"
-4
+"dist" "nuts" "trees" "label" "repulsion" "null"
+0
 
 PLOT
 1325
@@ -479,14 +493,63 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot count patches with [discover-patch? 0]"
 
 CHOOSER
-70
-493
-221
-538
+39
+455
+190
+500
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
 2
+
+SLIDER
+22
+405
+194
+438
+repulsion-effect
+repulsion-effect
+0
+100
+8.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+175
+41
+302
+74
+hidde agents
+ask wastes [set hidden? true]
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+176
+85
+341
+118
+not hidden agents
+ask wastes [set hidden? false]
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
