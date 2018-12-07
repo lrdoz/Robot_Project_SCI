@@ -16,7 +16,7 @@ to setup
     [ set pcolor black set wall 1 ]
 
 
-  set table-size ifelse-value coop? [1] [nb-robots]
+  set table-size ifelse-value (comportement = "coop-av-coord") [1] [nb-robots]
 
   ;; Génère des points aléatoire
   if add-wall?[
@@ -54,7 +54,7 @@ to init-robot
   set shape "squirrel"
   set color 36
   set hidden? true
-  set index ifelse-value coop? [0] [who]
+  set index ifelse-value (comportement = "coop-av-coord") [0] [who]
   set goal nobody
   move-to one-of patches with [no-wall?]
 end
@@ -110,6 +110,8 @@ to show-label
       [set plabel array:item dist-trees (0)]
       if (show-dist = "label")
       [set plabel array:item robots-know (0)]
+      if (show-dist = "null")
+      [set plabel ""]
   ]
 end
 
@@ -120,7 +122,7 @@ to propagate
     set dist-nuts array:from-list n-values nb-robots [-1]
     set dist-trees array:from-list n-values nb-robots [-1]]
 
-  if-else coop? and any? robots
+  if-else (comportement = "coop-av-coord") and any? robots
     [ask robots [choose-propagate]]
   [ask robots [choose-propagate]]
 
@@ -135,7 +137,7 @@ to choose-propagate
   set p patches with [buckets-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
   propagate-robot-tree p ind
 
-  ifelse coop?
+  ifelse (comportement = "coop-av-coord")
   [set p goal]
   [set p patches with [nuts-patch? ind]] ;; c'est ici qu'on doit changer pour le coop/solitaire
 
@@ -183,7 +185,7 @@ to uncover
 
   ask patches in-cone perception 360 with [no-wall? and hide-patch? ind]
     [(array:set robots-know ind 1)
-      set pcolor ifelse-value coop?
+      set pcolor ifelse-value (comportement = "coop-av-coord")
       [white]
       [scale-color white (sum(array:to-list robots-know)) 0 nb-robots]]
   ;;
@@ -208,7 +210,7 @@ to pick-up
     [set ind who move-to min-one-of v [(array:item dist-nuts ind)] set ind index]
     [move-to min-one-of v [(array:item dist-trees ind)]]
     consume
-    ifelse coop? [
+    ifelse (comportement = "coop-av-coord") [
       set p patches with [nuts-patch? ind]
       if (goal = nobody and any? p)
       ;; Il faut définir un objectif
@@ -240,10 +242,18 @@ to consume
   if goal != nobody[
   set tmp one-of goal
   ]
-  if pocket = 0 and (tmp = patch-here)
+  if-else not (comportement = "coop-av-coord")[
+    if pocket = 0 and (tmp = patch-here)
   [ set pocket 1
     ask wastes-here [die]
     ask patch-here [(array:set robots-know ind 1)]
+  ]
+  ]
+  [if pocket = 0 and (tmp = patch-here)
+    [ set pocket 1
+      ask wastes-here [die]
+      ask patch-here [(array:set robots-know ind 1)]
+    ]
   ]
   if pocket = 1 and any? buckets-here
   [ set pocket 0
@@ -298,10 +308,10 @@ end
 ;;end
 @#$#@#$#@
 GRAPHICS-WINDOW
-655
-10
-1168
-524
+485
+22
+998
+536
 -1
 -1
 15.303030303030303
@@ -440,17 +450,6 @@ nb-buckets
 NIL
 HORIZONTAL
 
-SWITCH
-18
-375
-154
-408
-coop?
-coop?
-0
-1
--1000
-
 CHOOSER
 202
 367
@@ -478,6 +477,16 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot count patches with [discover-patch? 0]"
+
+CHOOSER
+70
+493
+221
+538
+comportement
+comportement
+"egoiste" "coop-ss-coord" "coop-av-coord"
+2
 
 @#$#@#$#@
 ## WHAT IS IT?
