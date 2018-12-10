@@ -451,7 +451,7 @@ nb-dechets
 nb-dechets
 0
 100
-3.0
+5.0
 1
 1
 NIL
@@ -465,7 +465,7 @@ CHOOSER
 show-dist
 show-dist
 "dist" "nuts" "trees" "label" "repulsion" "null"
-1
+5
 
 PLOT
 1325
@@ -553,7 +553,7 @@ max-nuts
 max-nuts
 1
 100
-1.0
+8.0
 1
 1
 NIL
