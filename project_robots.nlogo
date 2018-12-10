@@ -141,7 +141,7 @@ to choose-propagate
   set p patches with [buckets-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
   propagate-robot-tree p ind
 
-  ifelse ("coop-av-coord" = comportement or "coop-ss-coord" = comportement)
+  ifelse ("coop-av-coord" = comportement)
   [
     ;; Répulsion si on est en phase d'exploration, sinon rien
     if unfinished?
@@ -225,26 +225,30 @@ to pick-up
 
   ;; Si plus de noisette
   ifelse not any? p and goal = nobody
-  [move-to min-one-of v [(array:item dist-trees ind)]
+  [
+    move-to min-one-of v [(array:item dist-trees ind)]
     sleep-robot
   ]
-  [
-    ifelse (pocket = 0)
-    [set ind who move-to min-one-of v [(array:item dist-nuts ind)] set ind index]
+  [ ;; Si il ne peut plus prendre de noisette on l'envoie sur une pouvelle, sinon on va sur son objectif
+    ifelse (pocket < max-nuts)
+    [set ind who move-to min-one-of v [(array:item dist-nuts ind)] set ind index];
     [move-to min-one-of v [(array:item dist-trees ind)]]
+
     consume
+
     ifelse ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) [
       set p patches with [nuts-patch? ind]
-      if (goal = nobody and any? p)
-      ;; Il faut définir un objectif
+      if (goal = nobody and any? p and "coop-av-coord" = comportement)
       [
         ;;
         set goal n-of 1 (p)
         ;; On reset la case actuel
-          ask goal [array:set robots-know ind 1]
+        ask goal [array:set robots-know ind 1]
       ]
+
     ]
     [
+      ;; Mise à jour des cases si pas en opératif
       ask patches in-cone perception 360 with [nuts-patch? ind]
       [(array:set robots-know ind 1)]
       ask wastes in-cone perception 360 with [no-wall?] [(array:set robots-know ind 2)]
@@ -263,21 +267,25 @@ to consume
   let ind index
   let tmp nobody
 
-  ;; Si il n'a pas d'objectif
+  ;; Si il a un objectif on le récupère
   if goal != nobody[
     set tmp one-of goal
   ]
 
-  let condition ifelse-value not ("coop-av-coord" = comportement or "coop-ss-coord" = comportement)[
-    any? wastes-here
-  ][(tmp = patch-here)]
+  ;; Si on est en copération, on regarde si la case actuelle est son objectif, sinon on regarde si il y a une noisette
+  let condition ifelse-value not ("coop-av-coord" = comportement)
+   [any? wastes-here]
+   [tmp = patch-here]
 
-  if pocket = 0 and condition
-  [ set pocket 1
+  ;; Si il peut encore porter une noisette, et que la case actuelle comporte une noisette ou est son objectif
+  if pocket < max-nuts and condition
+  [ set pocket pocket + 1
     ask wastes-here [die]
     ask patch-here [(array:set robots-know ind 1)]
   ]
-  if pocket = 1 and any? buckets-here
+
+  ;; Si il est sur un poubelle on le vide
+  if pocket >= 1 and any? buckets-here
   [ set pocket 0
     set goal nobody
   ]
@@ -384,9 +392,9 @@ NIL
 
 SWITCH
 15
-323
+334
 149
-356
+367
 neighbors4?
 neighbors4?
 0
@@ -400,7 +408,7 @@ SLIDER
 261
 perception
 perception
-0
+1
 50
 3.0
 1
@@ -415,19 +423,19 @@ SLIDER
 215
 nb-robots
 nb-robots
-0
+1
 100
-8.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-212
-230
-335
-263
+12
+383
+135
+416
 add-wall?
 add-wall?
 0
@@ -435,44 +443,29 @@ add-wall?
 -1000
 
 SLIDER
-213
+216
 179
-385
+388
 212
 nb-dechets
 nb-dechets
 0
 100
-21.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-207
-284
-379
-317
-nb-buckets
-nb-buckets
-0
-100
-1.0
+3.0
 1
 1
 NIL
 HORIZONTAL
 
 CHOOSER
-209
-336
-347
-381
+210
+325
+348
+370
 show-dist
 show-dist
 "dist" "nuts" "trees" "label" "repulsion" "null"
-0
+1
 
 PLOT
 1325
@@ -493,20 +486,20 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot count patches with [discover-patch? 0]"
 
 CHOOSER
-39
-455
-190
-500
+204
+378
+355
+423
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
 2
 
 SLIDER
-22
-405
-194
-438
+211
+273
+383
+306
 repulsion-effect
 repulsion-effect
 0
@@ -550,6 +543,36 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+214
+229
+386
+262
+max-nuts
+max-nuts
+1
+100
+1.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+9
+270
+181
+303
+nb-buckets
+nb-buckets
+1
+100
+4.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
