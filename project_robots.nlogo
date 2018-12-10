@@ -5,7 +5,7 @@ extensions [array]
 
 globals [ max-dist table-size sleep-var]
 patches-own [dist repulsion dist-nuts dist-trees wall robots-know]
-robots-own [pocket index goal]
+robots-own [pocket index goal steps alive]
 
 
 ;; récupérer les turtles dans un rayon : turtles in-radius 3
@@ -56,6 +56,7 @@ to init-robot
   set hidden? true
   set index ifelse-value ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) [0] [who]
   set goal nobody
+  set alive 1
   move-to one-of patches with [no-wall?]
 end
 
@@ -77,18 +78,18 @@ end
 
 
 to go
-  ifelse any? robots [
+  if awakes? [
     ask robots [choose-move]
     propagate
     tick
   ]
-  [
-    ask patches with [pxcor = (- sleep-var) or pxcor = sleep-var][set pcolor black]
-    ask buckets [die]
-    ask patch 0 0  [set plabel-color white set plabel "Good Night !" ]
-    set sleep-var sleep-var + 1
-    tick
-  ]
+  ;;[
+  ;;  ask patches with [pxcor = (- sleep-var) or pxcor = sleep-var][set pcolor black]
+  ;;  ask buckets [die]
+  ;;  ask patch 0 0  [set plabel-color white set plabel "Good Night !" ]
+  ;;  set sleep-var sleep-var + 1
+  ;;  tick
+  ;;]
 end
 
 to-report voisins
@@ -137,6 +138,8 @@ to choose-propagate
   let ind index
   let p patches with [hide-patch? ind]
   propagate-robot p ind
+
+  ask patches with [wall?][array:set dist ind 0]
 
   set p patches with [buckets-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
   propagate-robot-tree p ind
@@ -196,6 +199,7 @@ end
 
 to choose-move
   set hidden? false
+  set steps steps + 1
   if-else unfinished? [uncover] [pick-up]
 end
 
@@ -229,7 +233,7 @@ to pick-up
     move-to min-one-of v [(array:item dist-trees ind)]
     sleep-robot
   ]
-  [ ;; Si il ne peut plus prendre de noisette on l'envoie sur une pouvelle, sinon on va sur son objectif
+  [ ;; Si il ne peut plus prendre de noisette on l'envoie sur une poubelle, sinon on va sur son objectif
     ifelse (pocket < max-nuts)
     [set ind who move-to min-one-of v [(array:item dist-nuts ind)] set ind index];
     [move-to min-one-of v [(array:item dist-trees ind)]]
@@ -241,7 +245,8 @@ to pick-up
       if (goal = nobody and any? p and "coop-av-coord" = comportement)
       [
         ;;
-        set goal n-of 1 (p)
+        ;;set goal n-of 1 (p)
+        set goal (min-n-of 1 p [distance myself] )
         ;; On reset la case actuel
         ask goal [array:set robots-know ind 1]
       ]
@@ -260,7 +265,7 @@ end
 
 to sleep-robot
   if any? buckets-here
-  [die]
+  [set alive 0]
 end
 
 to consume
@@ -293,8 +298,14 @@ end
 
 to-report unfinished?
   let ind index
-  let p (patches with [not ((array:item dist ind) = -1)])
-  report (any? p)
+  let p (patches with [array:item dist ind = -1])
+  ;; cherche les patches avec des dist == -1
+  report not (any? p)
+end
+
+to-report awakes?
+  let p (robots with [alive = 1])
+  report any? p
 end
 
 to-report hide-patch? [ind]
@@ -410,7 +421,7 @@ perception
 perception
 1
 50
-3.0
+1.0
 1
 1
 NIL
@@ -425,7 +436,7 @@ nb-robots
 nb-robots
 1
 100
-2.0
+3.0
 1
 1
 NIL
@@ -451,7 +462,7 @@ nb-dechets
 nb-dechets
 0
 100
-5.0
+20.0
 1
 1
 NIL
@@ -493,7 +504,7 @@ CHOOSER
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
-2
+0
 
 SLIDER
 211
@@ -553,7 +564,7 @@ max-nuts
 max-nuts
 1
 100
-8.0
+1.0
 1
 1
 NIL
@@ -568,7 +579,7 @@ nb-buckets
 nb-buckets
 1
 100
-4.0
+2.0
 1
 1
 NIL
@@ -971,6 +982,44 @@ NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment_steps" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="10000"/>
+    <metric>mean [steps] of robots</metric>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;egoiste&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
