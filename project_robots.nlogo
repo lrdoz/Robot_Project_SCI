@@ -421,7 +421,7 @@ perception
 perception
 1
 50
-1.0
+3.0
 1
 1
 NIL
@@ -462,7 +462,7 @@ nb-dechets
 nb-dechets
 0
 100
-20.0
+30.0
 1
 1
 NIL
@@ -515,7 +515,7 @@ repulsion-effect
 repulsion-effect
 0
 100
-8.0
+0.0
 1
 1
 NIL
@@ -579,7 +579,7 @@ nb-buckets
 nb-buckets
 1
 100
-2.0
+3.0
 1
 1
 NIL
@@ -986,14 +986,14 @@ NetLogo 6.0.4
   <experiment name="experiment_steps" repetitions="10" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
-    <timeLimit steps="10000"/>
+    <timeLimit steps="2000"/>
     <metric>mean [steps] of robots</metric>
+    <metric>min [steps] of robots</metric>
+    <metric>max [steps] of robots</metric>
     <enumeratedValueSet variable="nb-buckets">
-      <value value="2"/>
+      <value value="3"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="nb-dechets">
-      <value value="20"/>
-    </enumeratedValueSet>
+    <steppedValueSet variable="nb-dechets" first="3" step="1" last="30"/>
     <enumeratedValueSet variable="add-wall?">
       <value value="true"/>
     </enumeratedValueSet>
@@ -1007,10 +1007,10 @@ NetLogo 6.0.4
       <value value="&quot;egoiste&quot;"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="repulsion-effect">
-      <value value="8"/>
+      <value value="0"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="perception">
-      <value value="1"/>
+      <value value="3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="nb-robots">
       <value value="3"/>
