@@ -5,13 +5,15 @@ extensions [array]
 
 globals [ max-dist table-size sleep-var]
 patches-own [dist repulsion dist-nuts dist-trees wall robots-know]
-robots-own [pocket index goal steps alive]
+robots-own [pocket exploration-time pick-time index goal steps participation alive]
 
 
 ;; récupérer les turtles dans un rayon : turtles in-radius 3
 
 to setup
   __clear-all-and-reset-ticks
+
+  random-seed 12345
   ask patches with [ (abs pxcor = max-pxcor) or (abs pycor = max-pycor) ]
     [ set pcolor black set wall 1 ]
 
@@ -38,6 +40,7 @@ to setup
     set robots-know array:from-list n-values table-size [1]
   ]
 
+
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
 
@@ -46,7 +49,10 @@ to setup
 
   create-buckets nb-buckets [ init-bucket]
 
+  random-seed new-seed
+
   ask robots [move-to one-of buckets]
+
   propagate
 end
 
@@ -57,6 +63,9 @@ to init-robot
   set index ifelse-value ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) [0] [who]
   set goal nobody
   set alive 1
+  set participation 0
+  set exploration-time 0
+  set pick-time 0
   move-to one-of patches with [no-wall?]
 end
 
@@ -208,6 +217,8 @@ to uncover
   let my-index who
   let v (voisins with [no-wall?])
 
+  set exploration-time exploration-time + 1
+
   move-to min-one-of v [(array:item dist ind) + (array:item repulsion  my-index)]
 
   ask patches in-cone perception 360 with [no-wall? and hide-patch? ind]
@@ -226,6 +237,8 @@ to pick-up
   let v (voisins with [no-wall?])
 
   let p patches with [nuts-patch? ind]
+
+  set pick-time pick-time + 1
 
   ;; Si plus de noisette
   ifelse not any? p and goal = nobody
@@ -291,7 +304,9 @@ to consume
 
   ;; Si il est sur un poubelle on le vide
   if pocket >= 1 and any? buckets-here
-  [ set pocket 0
+  [
+    set participation participation + pocket
+    set pocket 0
     set goal nobody
   ]
 end
@@ -421,7 +436,7 @@ perception
 perception
 1
 50
-3.0
+2.0
 1
 1
 NIL
@@ -436,7 +451,7 @@ nb-robots
 nb-robots
 1
 100
-3.0
+5.0
 1
 1
 NIL
@@ -478,24 +493,6 @@ show-dist
 "dist" "nuts" "trees" "label" "repulsion" "null"
 5
 
-PLOT
-1325
-48
-1525
-198
-plot 1
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-false
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot count patches with [discover-patch? 0]"
-
 CHOOSER
 204
 378
@@ -504,7 +501,7 @@ CHOOSER
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
-0
+1
 
 SLIDER
 211
@@ -579,7 +576,7 @@ nb-buckets
 nb-buckets
 1
 100
-3.0
+1.0
 1
 1
 NIL
@@ -983,13 +980,16 @@ NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment_steps" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="experiment_steps" repetitions="5" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="2000"/>
     <metric>mean [steps] of robots</metric>
     <metric>min [steps] of robots</metric>
     <metric>max [steps] of robots</metric>
+    <metric>mean [participation] of robots</metric>
+    <metric>min [participation] of robots</metric>
+    <metric>max [participation] of robots</metric>
     <enumeratedValueSet variable="nb-buckets">
       <value value="3"/>
     </enumeratedValueSet>
@@ -1014,6 +1014,78 @@ NetLogo 6.0.4
     </enumeratedValueSet>
     <enumeratedValueSet variable="nb-robots">
       <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="explore_comportment" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="700"/>
+    <metric>mean [exploration-time] of robots</metric>
+    <metric>min [exploration-time] of robots</metric>
+    <metric>max [exploration-time] of robots</metric>
+    <steppedValueSet variable="nb-buckets" first="1" step="1" last="5"/>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="30"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;egoiste&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="explore_comportment_repulse_ss" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="700"/>
+    <metric>mean [exploration-time] of robots</metric>
+    <metric>min [exploration-time] of robots</metric>
+    <metric>max [exploration-time] of robots</metric>
+    <steppedValueSet variable="nb-buckets" first="1" step="1" last="5"/>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="30"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;coop-ss-coord&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="neighbors4?">
       <value value="true"/>
