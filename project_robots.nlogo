@@ -39,7 +39,7 @@ to setup
   ask patches with [wall?][
     set robots-know array:from-list n-values table-size [1]
   ]
-
+   random-seed new-seed
 
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
@@ -48,8 +48,6 @@ to setup
   create-wastes nb-dechets [ init-waste]
 
   create-buckets nb-buckets [ init-bucket]
-
-  random-seed new-seed
 
   ask robots [move-to one-of buckets]
 
@@ -451,7 +449,7 @@ nb-robots
 nb-robots
 1
 100
-5.0
+4.0
 1
 1
 NIL
@@ -501,7 +499,7 @@ CHOOSER
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
-1
+2
 
 SLIDER
 211
@@ -512,45 +510,11 @@ repulsion-effect
 repulsion-effect
 0
 100
-0.0
+10.0
 1
 1
 NIL
 HORIZONTAL
-
-BUTTON
-175
-41
-302
-74
-hidde agents
-ask wastes [set hidden? true]
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-176
-85
-341
-118
-not hidden agents
-ask wastes [set hidden? false]
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
 
 SLIDER
 214
@@ -576,7 +540,7 @@ nb-buckets
 nb-buckets
 1
 100
-1.0
+3.0
 1
 1
 NIL
@@ -1019,7 +983,7 @@ NetLogo 6.0.4
       <value value="true"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="explore_comportment" repetitions="1" runMetricsEveryStep="false">
+  <experiment name="explore_comportment" repetitions="5" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="700"/>
@@ -1049,13 +1013,13 @@ NetLogo 6.0.4
       <value value="2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="nb-robots">
-      <value value="5"/>
+      <value value="4"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="neighbors4?">
       <value value="true"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="explore_comportment_repulse_ss" repetitions="1" runMetricsEveryStep="false">
+  <experiment name="explore_comportment_repulse_ss" repetitions="5" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="700"/>
@@ -1085,7 +1049,43 @@ NetLogo 6.0.4
       <value value="2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="nb-robots">
-      <value value="5"/>
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="repulsion_b" repetitions="5" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="700"/>
+    <metric>mean [exploration-time] of robots</metric>
+    <metric>min [exploration-time] of robots</metric>
+    <metric>max [exploration-time] of robots</metric>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="30"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;coop-av-coord&quot;"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="repulsion-effect" first="2" step="2" last="10"/>
+    <enumeratedValueSet variable="perception">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="neighbors4?">
       <value value="true"/>
