@@ -6,16 +6,16 @@ import matplotlib.pyplot as plt
 def plotage(x_axe, y_axe, labels, nb_values, x_lab, y_lab):
     print(x_axe)
     for i in range(nb_values):
-        plt.plot(x_axe, y_axe[i], label=labels[i])
+        plt.bar(x_axe, y_axe[i], label=labels[i])
     plt.xlabel(x_lab)
     plt.ylabel(y_lab)
-    plt.legend(loc='upper right')
+    plt.legend(loc='upper left')
     plt.show()
 
 def lissage(csv_val, repet, nb_values):
     x_axe = []
     y_axe = [[] for x in range(0,nb_values)]
-    i = 0 
+    i = 0
     while (i < len(csv_val)):
         end_i = i
         key_val = csv_val[i][0]

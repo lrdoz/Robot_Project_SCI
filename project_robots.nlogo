@@ -14,6 +14,9 @@ to setup
   __clear-all-and-reset-ticks
 
 
+  resize-world (- env-size) env-size (- env-size) env-size
+  set-patch-size   250 / env-size
+
   random-seed seed-wall
   ask patches with [ (abs pxcor = max-pxcor) or (abs pycor = max-pycor) ]
     [ set pcolor black set wall 1 ]
@@ -21,13 +24,14 @@ to setup
 
   set table-size ifelse-value ("coop-av-coord" = comportement or "coop-ss-coord" = comportement) [1] [nb-robots]
 
+  let perct (wall-perc * (2 * env-size * env-size)) / 100
   ;; Génère des points aléatoire
   if add-wall?[
-    ask n-of 100 patches with [ not any? neighbors with [wall = 1]]
+    ask n-of (perct / 2) patches with [ not any? neighbors with [wall = 1]]
     [ set pcolor black set wall 1 ]
 
     ;; Cherche les points aléatoire et les grossis
-    repeat 100
+    repeat perct
     [ ask one-of patches with [ (wall = 1) and (count neighbors4 with [wall = 1] < 2) ]
       [ask one-of neighbors4 with [ no-wall? ] [ set pcolor black set wall 1 ]]
     ]
@@ -77,7 +81,7 @@ to init-waste
   set shape "acorn"
   set color 23
   set hidden? true
-  move-to one-of patches with [no-wall?]
+  move-to one-of patches with [no-wall? and not(any? turtles-on self) ]
 end
 
 to init-bucket
@@ -85,7 +89,7 @@ to init-bucket
   set color 61
   set size 2
   set hidden? true
-  move-to one-of patches with [no-wall?]
+  move-to one-of patches with [no-wall? and not(any? turtles-on self)]
 end
 
 
@@ -154,6 +158,7 @@ to choose-propagate
   ask patches with [wall?][array:set dist ind 0]
 
   set p patches with [buckets-patch? ind] ;; c'est ici qu'on doit changer pour le coop/solitaire
+
   propagate-robot-tree p ind
 
   ifelse ("coop-av-coord" = comportement)
@@ -361,11 +366,11 @@ end
 GRAPHICS-WINDOW
 485
 22
-1033
-571
+1005
+543
 -1
 -1
-16.364
+12.5
 1
 10
 1
@@ -375,10 +380,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-20
+20
+-20
+20
 1
 1
 1
@@ -403,10 +408,10 @@ NIL
 1
 
 BUTTON
+143
 25
-77
-88
-110
+206
+58
 NIL
 go
 T
@@ -420,10 +425,10 @@ NIL
 1
 
 SWITCH
-15
-334
-149
-367
+29
+228
+163
+261
 neighbors4?
 neighbors4?
 0
@@ -431,25 +436,25 @@ neighbors4?
 -1000
 
 SLIDER
-9
-228
-181
-261
+23
+122
+195
+155
 perception
 perception
 1
 50
-3.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-7
-182
-179
-215
+21
+76
+193
+109
 nb-robots
 nb-robots
 1
@@ -461,10 +466,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-12
-383
-135
-416
+26
+277
+149
+310
 add-wall?
 add-wall?
 0
@@ -472,10 +477,10 @@ add-wall?
 -1000
 
 SLIDER
-216
-179
-388
-212
+230
+73
+402
+106
 nb-dechets
 nb-dechets
 0
@@ -487,45 +492,45 @@ NIL
 HORIZONTAL
 
 CHOOSER
-210
-325
-348
-370
+224
+219
+362
+264
 show-dist
 show-dist
 "dist" "nuts" "trees" "label" "repulsion" "null"
 5
 
 CHOOSER
-204
-378
-355
-423
+218
+272
+369
+317
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
-1
+2
 
 SLIDER
-211
-273
-383
-306
+225
+167
+397
+200
 repulsion-effect
 repulsion-effect
 0
 100
-4.0
+10.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-214
-229
-386
-262
+228
+123
+400
+156
 max-nuts
 max-nuts
 1
@@ -537,10 +542,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-9
-270
-181
-303
+23
+164
+195
+197
 nb-buckets
 nb-buckets
 1
@@ -552,10 +557,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-64
-503
-236
-536
+211
+469
+383
+502
 seed-wall
 seed-wall
 0
@@ -567,15 +572,45 @@ NIL
 HORIZONTAL
 
 SLIDER
-63
-551
-235
-584
+17
+420
+189
+453
 seed-set
 seed-set
 0
 1000
-8.0
+1.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+209
+420
+381
+453
+env-size
+env-size
+0
+100
+20.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+15
+465
+187
+498
+wall-perc
+wall-perc
+0
+100
+18.0
 1
 1
 NIL
@@ -1131,49 +1166,6 @@ NetLogo 6.0.4
       <value value="true"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="pick_ego" repetitions="1" runMetricsEveryStep="false">
-    <setup>setup</setup>
-    <go>go</go>
-    <timeLimit steps="1500"/>
-    <metric>mean [pick-time] of robots</metric>
-    <metric>min [pick-time] of robots</metric>
-    <metric>max [pick-time] of robots</metric>
-    <metric>mean [participation] of robots</metric>
-    <metric>min [participation] of robots</metric>
-    <metric>max [participation] of robots</metric>
-    <enumeratedValueSet variable="nb-buckets">
-      <value value="4"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="nb-dechets" first="20" step="4" last="60"/>
-    <enumeratedValueSet variable="add-wall?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="max-nuts">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="show-dist">
-      <value value="&quot;null&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="comportement">
-      <value value="&quot;egoiste&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="repulsion-effect">
-      <value value="4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="perception">
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="nb-robots">
-      <value value="4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="neighbors4?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="seed-wall">
-      <value value="50"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="seed-set" first="1" step="1" last="10"/>
-  </experiment>
   <experiment name="pick_ss" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
@@ -1185,7 +1177,7 @@ NetLogo 6.0.4
     <metric>min [participation] of robots</metric>
     <metric>max [participation] of robots</metric>
     <enumeratedValueSet variable="nb-buckets">
-      <value value="4"/>
+      <value value="2"/>
     </enumeratedValueSet>
     <steppedValueSet variable="nb-dechets" first="20" step="4" last="60"/>
     <enumeratedValueSet variable="add-wall?">
@@ -1204,7 +1196,7 @@ NetLogo 6.0.4
       <value value="4"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="perception">
-      <value value="3"/>
+      <value value="2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="nb-robots">
       <value value="4"/>
@@ -1228,7 +1220,7 @@ NetLogo 6.0.4
     <metric>min [participation] of robots</metric>
     <metric>max [participation] of robots</metric>
     <enumeratedValueSet variable="nb-buckets">
-      <value value="4"/>
+      <value value="2"/>
     </enumeratedValueSet>
     <steppedValueSet variable="nb-dechets" first="20" step="4" last="60"/>
     <enumeratedValueSet variable="add-wall?">
@@ -1247,7 +1239,7 @@ NetLogo 6.0.4
       <value value="4"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="perception">
-      <value value="3"/>
+      <value value="2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="nb-robots">
       <value value="4"/>
@@ -1259,6 +1251,190 @@ NetLogo 6.0.4
       <value value="50"/>
     </enumeratedValueSet>
     <steppedValueSet variable="seed-set" first="1" step="1" last="10"/>
+  </experiment>
+  <experiment name="pick_ego" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="2000"/>
+    <metric>mean [pick-time] of robots</metric>
+    <metric>min [pick-time] of robots</metric>
+    <metric>max [pick-time] of robots</metric>
+    <metric>mean [participation] of robots</metric>
+    <metric>min [participation] of robots</metric>
+    <metric>max [participation] of robots</metric>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="nb-dechets" first="20" step="4" last="60"/>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;egoiste&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="seed-set" first="1" step="1" last="10"/>
+  </experiment>
+  <experiment name="pick_all" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="2000"/>
+    <metric>min [pick-time] of robots</metric>
+    <metric>mean [pick-time] of robots</metric>
+    <metric>max [pick-time] of robots</metric>
+    <metric>min [participation] of robots</metric>
+    <metric>mean [participation] of robots</metric>
+    <metric>max [participation] of robots</metric>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="60"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;egoiste&quot;"/>
+      <value value="&quot;coop-av-coord&quot;"/>
+      <value value="&quot;coop-ss-coord&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="seed-set" first="1" step="1" last="10"/>
+  </experiment>
+  <experiment name="experiment" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles</metric>
+    <enumeratedValueSet variable="seed-set">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="wall-perc">
+      <value value="18"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="env-size">
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="60"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;coop-av-coord&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="explo_coop_new" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="2000"/>
+    <metric>mean [exploration-time] of robots</metric>
+    <steppedValueSet variable="seed-set" first="1" step="1" last="15"/>
+    <enumeratedValueSet variable="wall-perc">
+      <value value="18"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="env-size">
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="60"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;coop-av-coord&quot;"/>
+      <value value="&quot;coop-ss-coord&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
   </experiment>
 </experiments>
 @#$#@#$#@
