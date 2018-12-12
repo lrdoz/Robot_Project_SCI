@@ -439,7 +439,7 @@ perception
 perception
 1
 50
-2.0
+3.0
 1
 1
 NIL
@@ -480,7 +480,7 @@ nb-dechets
 nb-dechets
 0
 100
-30.0
+60.0
 1
 1
 NIL
@@ -504,7 +504,7 @@ CHOOSER
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
-2
+1
 
 SLIDER
 211
@@ -515,7 +515,7 @@ repulsion-effect
 repulsion-effect
 0
 100
-10.0
+4.0
 1
 1
 NIL
@@ -545,7 +545,7 @@ nb-buckets
 nb-buckets
 1
 100
-3.0
+4.0
 1
 1
 NIL
@@ -575,7 +575,7 @@ seed-set
 seed-set
 0
 1000
-50.0
+8.0
 1
 1
 NIL
@@ -979,20 +979,17 @@ NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment_steps" repetitions="5" runMetricsEveryStep="false">
+  <experiment name="explo_all" repetitions="10" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
-    <timeLimit steps="2000"/>
-    <metric>mean [steps] of robots</metric>
-    <metric>min [steps] of robots</metric>
-    <metric>max [steps] of robots</metric>
-    <metric>mean [participation] of robots</metric>
-    <metric>min [participation] of robots</metric>
-    <metric>max [participation] of robots</metric>
+    <timeLimit steps="650"/>
+    <metric>mean [exploration-time] of robots</metric>
     <enumeratedValueSet variable="nb-buckets">
-      <value value="3"/>
+      <value value="1"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="nb-dechets" first="3" step="1" last="30"/>
+    <enumeratedValueSet variable="nb-dechets">
+      <value value="1"/>
+    </enumeratedValueSet>
     <enumeratedValueSet variable="add-wall?">
       <value value="true"/>
     </enumeratedValueSet>
@@ -1004,18 +1001,26 @@ NetLogo 6.0.4
     </enumeratedValueSet>
     <enumeratedValueSet variable="comportement">
       <value value="&quot;egoiste&quot;"/>
+      <value value="&quot;coop-av-coord&quot;"/>
+      <value value="&quot;coop-ss-coord&quot;"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="repulsion-effect">
-      <value value="0"/>
+      <value value="4"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="perception">
       <value value="3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="nb-robots">
-      <value value="3"/>
+      <value value="4"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="neighbors4?">
       <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-set">
+      <value value="75"/>
     </enumeratedValueSet>
   </experiment>
   <experiment name="explore_comportment" repetitions="5" runMetricsEveryStep="false">
@@ -1125,6 +1130,135 @@ NetLogo 6.0.4
     <enumeratedValueSet variable="neighbors4?">
       <value value="true"/>
     </enumeratedValueSet>
+  </experiment>
+  <experiment name="pick_ego" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="1500"/>
+    <metric>mean [pick-time] of robots</metric>
+    <metric>min [pick-time] of robots</metric>
+    <metric>max [pick-time] of robots</metric>
+    <metric>mean [participation] of robots</metric>
+    <metric>min [participation] of robots</metric>
+    <metric>max [participation] of robots</metric>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="nb-dechets" first="20" step="4" last="60"/>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;egoiste&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="seed-set" first="1" step="1" last="10"/>
+  </experiment>
+  <experiment name="pick_ss" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="2000"/>
+    <metric>mean [pick-time] of robots</metric>
+    <metric>min [pick-time] of robots</metric>
+    <metric>max [pick-time] of robots</metric>
+    <metric>mean [participation] of robots</metric>
+    <metric>min [participation] of robots</metric>
+    <metric>max [participation] of robots</metric>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="nb-dechets" first="20" step="4" last="60"/>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;coop-ss-coord&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="seed-set" first="1" step="1" last="10"/>
+  </experiment>
+  <experiment name="pick_av" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="2000"/>
+    <metric>mean [pick-time] of robots</metric>
+    <metric>min [pick-time] of robots</metric>
+    <metric>max [pick-time] of robots</metric>
+    <metric>mean [participation] of robots</metric>
+    <metric>min [participation] of robots</metric>
+    <metric>max [participation] of robots</metric>
+    <enumeratedValueSet variable="nb-buckets">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="nb-dechets" first="20" step="4" last="60"/>
+    <enumeratedValueSet variable="add-wall?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-nuts">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="show-dist">
+      <value value="&quot;null&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="comportement">
+      <value value="&quot;coop-av-coord&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="repulsion-effect">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="perception">
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nb-robots">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="neighbors4?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="seed-wall">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="seed-set" first="1" step="1" last="10"/>
   </experiment>
 </experiments>
 @#$#@#$#@
