@@ -485,7 +485,7 @@ nb-dechets
 nb-dechets
 0
 100
-1.0
+60.0
 1
 1
 NIL
@@ -509,7 +509,7 @@ CHOOSER
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
-1
+2
 
 SLIDER
 225
@@ -520,7 +520,7 @@ repulsion-effect
 repulsion-effect
 0
 100
-0.0
+6.0
 1
 1
 NIL
@@ -550,7 +550,7 @@ nb-buckets
 nb-buckets
 1
 100
-5.0
+4.0
 1
 1
 NIL
@@ -1094,16 +1094,16 @@ NetLogo 6.0.4
       <value value="true"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="explore_comportment_ss" repetitions="20" runMetricsEveryStep="false">
+  <experiment name="explore_comportment_repulse_ss" repetitions="5" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
-    <timeLimit steps="500"/>
+    <timeLimit steps="700"/>
     <metric>mean [exploration-time] of robots</metric>
     <metric>min [exploration-time] of robots</metric>
     <metric>max [exploration-time] of robots</metric>
     <steppedValueSet variable="nb-buckets" first="1" step="1" last="5"/>
     <enumeratedValueSet variable="nb-dechets">
-      <value value="1"/>
+      <value value="30"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="add-wall?">
       <value value="true"/>

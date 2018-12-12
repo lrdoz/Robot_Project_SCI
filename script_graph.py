@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def plotage(x_axe, y_axe, labels, nb_values, x_lab, y_lab):
     print(x_axe)
     for i in range(nb_values):
-        plt.bar(x_axe, y_axe[i], label=labels[i])
+        plt.plot(x_axe, y_axe[i], label=labels[i])
     plt.xlabel(x_lab)
     plt.ylabel(y_lab)
     plt.legend(loc='upper left')
