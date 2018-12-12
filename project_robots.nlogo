@@ -13,7 +13,8 @@ robots-own [pocket exploration-time pick-time index goal steps participation ali
 to setup
   __clear-all-and-reset-ticks
 
-  random-seed 12345
+
+  random-seed seed-wall
   ask patches with [ (abs pxcor = max-pxcor) or (abs pycor = max-pycor) ]
     [ set pcolor black set wall 1 ]
 
@@ -39,7 +40,8 @@ to setup
   ask patches with [wall?][
     set robots-know array:from-list n-values table-size [1]
   ]
-   random-seed new-seed
+
+  random-seed seed-set
 
   ;; Place les robots
   create-robots nb-robots [ init-robot ]
@@ -51,8 +53,11 @@ to setup
 
   ask robots [move-to one-of buckets]
 
+  random-seed new-seed
+
   propagate
 end
+
 
 to init-robot
   set shape "squirrel"
@@ -541,6 +546,36 @@ nb-buckets
 1
 100
 3.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+64
+503
+236
+536
+seed-wall
+seed-wall
+0
+1000
+50.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+63
+551
+235
+584
+seed-set
+seed-set
+0
+1000
+50.0
 1
 1
 NIL
