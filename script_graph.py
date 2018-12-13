@@ -9,7 +9,7 @@ def plotage(x_axe, y_axe, labels, nb_values, x_lab, y_lab):
         plt.plot(x_axe, y_axe[i], label=labels[i])
     plt.xlabel(x_lab)
     plt.ylabel(y_lab)
-    plt.legend(loc='upper left')
+    plt.legend()
     plt.show()
 
 def lissage(csv_val, repet, nb_values):
@@ -52,7 +52,7 @@ def main(csv_name,repet, index, min_values, max_values, x_lab, y_lab):
             else :
                 line_count += 1
                 try:
-                    new_val = [row[int(index)]]+list(map(float,row[min_values:max_values+1]))
+                    new_val = [int(row[index])]+list(map(float,row[min_values:max_values+1]))
                 except:
                     new_val = [row[index]]+list(map(float,row[min_values:max_values+1]))
 
