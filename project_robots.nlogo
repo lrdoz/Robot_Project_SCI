@@ -366,11 +366,11 @@ end
 GRAPHICS-WINDOW
 485
 22
-1005
-543
+1012
+550
 -1
 -1
-12.5
+19.23076923076923
 1
 10
 1
@@ -380,10 +380,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--20
-20
--20
-20
+-13
+13
+-13
+13
 1
 1
 1
@@ -459,7 +459,7 @@ nb-robots
 nb-robots
 1
 100
-4.0
+2.0
 1
 1
 NIL
@@ -485,7 +485,7 @@ nb-dechets
 nb-dechets
 0
 100
-1.0
+21.0
 1
 1
 NIL
@@ -509,7 +509,7 @@ CHOOSER
 comportement
 comportement
 "egoiste" "coop-ss-coord" "coop-av-coord"
-1
+2
 
 SLIDER
 225
@@ -535,7 +535,7 @@ max-nuts
 max-nuts
 1
 100
-1.0
+3.0
 1
 1
 NIL
@@ -550,7 +550,7 @@ nb-buckets
 nb-buckets
 1
 100
-5.0
+1.0
 1
 1
 NIL
@@ -595,7 +595,7 @@ env-size
 env-size
 0
 100
-20.0
+13.0
 1
 1
 NIL
